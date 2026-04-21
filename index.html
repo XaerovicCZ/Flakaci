@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Mistr Páčidlo: Finální Verze</title>
+    <title>Pajcrman: Konstrukce v Hunteru</title>
     <style>
         body { 
             margin: 0; 
@@ -56,7 +56,7 @@
             left: 0; 
             width: 100%; 
             height: 100%; 
-            background: rgba(0,0,0,0.80); 
+            background: rgba(0,0,0,0.85); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
@@ -64,13 +64,16 @@
             text-align: center; 
             z-index: 100;
             border-radius: 0 0 10px 10px;
+            padding: 20px;
+            box-sizing: border-box;
         }
         
         .hidden { display: none !important; }
         
-        h1 { font-size: 55px; margin-bottom: 10px; color: #e74c3c; text-shadow: 3px 3px 0 #000; text-transform: uppercase; }
-        h2 { font-size: 35px; margin-bottom: 20px; color: #f1c40f; }
-        p { font-size: 22px; margin-bottom: 40px; line-height: 1.5; color: #ccc;}
+        h1 { font-size: 60px; margin-bottom: 10px; color: #e74c3c; text-shadow: 3px 3px 0 #000; text-transform: uppercase; }
+        h2 { font-size: 40px; margin-bottom: 20px; color: #f1c40f; }
+        .intro-text { font-size: 26px; color: #f1c40f; font-weight: bold; margin-bottom: 15px; }
+        p { font-size: 22px; margin-bottom: 30px; line-height: 1.5; color: #ccc;}
         
         .btn { 
             padding: 15px 40px; font-size: 24px; font-weight: bold; color: white; 
@@ -89,7 +92,7 @@
 <div class="game-container">
     <div class="ui-bar">
         <div>Čas: <span id="timer">60.0</span>s</div>
-        <div>Zbývá: <span id="count">0</span></div>
+        <div>Konstruktéři: <span id="count">0</span></div>
         <div id="boost-indicator"></div>
         <div class="record">Rekord: <span id="best">--</span>s</div>
     </div>
@@ -98,9 +101,10 @@
         <canvas id="gameCanvas" width="1000" height="650"></canvas>
         
         <div id="screen-start" class="overlay">
-            <h1>Mistr Páčidlo</h1>
-            <p>Zažeň všechny flákače k počítačům do 60 sekund!<br>Pohyb: <b>W A S D</b> nebo <b>Šipky</b></p>
-            <button class="btn" onclick="startCountdown()">Začít směnu</button>
+            <h1>PAJCRMAN</h1>
+            <div class="intro-text">"Máme konstruktéry, které musím donutit začít makat!"</div>
+            <p>Zažeň všechny flákače z konstrukce k počítačům do 60 sekund!<br>Pohyb: <b>W A S D</b> nebo <b>Šipky</b></p>
+            <button class="btn" onclick="startCountdown()">Vlítnout na ně</button>
         </div>
 
         <div id="screen-countdown" class="overlay hidden">
@@ -108,20 +112,20 @@
         </div>
 
         <div id="screen-win" class="overlay hidden">
-            <h1>MANAŽER MĚSÍCE!</h1>
-            <h2>Gratulujeme!</h2>
-            <p>Všichni poctivě pracují.<br>Tvůj čas: <span id="win-time">0</span>s</p>
+            <h1>PAJCRMAN ROKU!</h1>
+            <h2>V konstrukci je klid.</h2>
+            <p>Všichni poctivě makají na výsecích.<br>Tvůj čas: <span id="win-time">0</span>s</p>
             <div>
-                <button class="btn" onclick="resetGame()">Znovu do práce</button>
+                <button class="btn" onclick="resetGame()">Další kontrola</button>
                 <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
             </div>
         </div>
 
         <div id="screen-lose" class="overlay hidden">
-            <h1>Konec hry</h1>
-            <p style="color: #e74c3c; font-weight: bold; font-size: 28px;">Firma zkrachovala.</p>
+            <h1>KONEC HRY</h1>
+            <p style="color: #e74c3c; font-weight: bold; font-size: 28px;">Firma zkrachovala, konstrukce se uflákala.</p>
             <div>
-                <button class="btn" onclick="resetGame()">Zkusit znovu</button>
+                <button class="btn" onclick="resetGame()">Zkusit znovu zachránit firmu</button>
                 <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
             </div>
         </div>
@@ -153,7 +157,7 @@ let timeLeft = 60, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
 
-let bestTime = localStorage.getItem('bestTimeCorporateV4') || Infinity;
+let bestTime = localStorage.getItem('bestTimePajcrman') || Infinity;
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
 function createWalls() {
@@ -191,7 +195,7 @@ class Slacker {
     constructor() {
         this.spawn();
         this.state = 'idle';
-        this.msg = ["Zzz...", "Schůzka?", "Ať už je pátek.", "Pauza!"][Math.floor(Math.random()*4)];
+        this.msg = ["Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe..."][Math.floor(Math.random()*5)];
         this.targetDesk = null;
     }
 
@@ -258,7 +262,7 @@ class Slacker {
         
         if (this.state === 'idle' && gameState === 'playing') {
             ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "12px Arial";
-            ctx.fillText(this.msg, sx, sy - 30);
+            ctx.fillText(this.msg, sx, sy - 35);
         }
     }
 }
@@ -353,9 +357,7 @@ function startGame() {
 function triggerLose() {
     gameState = 'lose';
     clearInterval(timerInterval);
-    canvas.classList.remove('no-cursor'); // Ukáže myš, ať se dá klikat
-    
-    // Zpoždění overlay obrazovky, abys viděl, že ses změnil na lebku
+    canvas.classList.remove('no-cursor'); 
     setTimeout(() => {
         screenLose.classList.remove('hidden');
     }, 1500);
@@ -374,18 +376,19 @@ function checkWin() {
         
         if(timeTaken < bestTime) { 
             bestTime = timeTaken; 
-            localStorage.setItem('bestTimeCorporateV4', bestTime); 
+            localStorage.setItem('bestTimePajcrman', bestTime); 
             bestEl.innerText = bestTime; 
         }
         
         setTimeout(() => {
+            hideAllScreens();
             screenWin.classList.remove('hidden');
         }, 2000);
     }
 }
 
 function quitGame() {
-    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 50px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Nyní můžeš bezpečně zavřít prohlížeč.</p>";
+    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 50px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Jdi domů, Pajcrmane. Konstrukce je v bezpečí.</p>";
 }
 
 function update() {
@@ -439,30 +442,22 @@ function draw() {
     let px = player.x - camera.x, py = player.y - camera.y;
     
     if (gameState === 'win') {
-        // TANEČEK - GEEK S POHÁREM
         danceFrame++;
         let bounce = Math.abs(Math.sin(danceFrame * 0.15)) * 15; 
-        
         ctx.font = "40px Arial";
-        ctx.fillText("🏆", px + 15, py - 20 - bounce); 
+        ctx.fillText("🏆", px + 20, py - 20 - bounce); 
         ctx.font = "45px Arial";
         ctx.fillText("🤓", px, py - bounce); 
-        
     } else if (gameState === 'lose') {
-        // LEBKA PŘI PROHŘE
         ctx.font = "45px Arial";
         ctx.fillText("💀", px, py);
-        
     } else {
-        // NORMÁLNÍ HRANÍ - GEEK S PÁČIDLEM
         if(player.isBoosted && gameState === 'playing') { 
             ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; 
         }
-        
         ctx.font = "40px Arial";
         ctx.fillText("🤓", px, py);
         ctx.shadowBlur = 0;
-        
         ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(px + 10, py - 5); 
