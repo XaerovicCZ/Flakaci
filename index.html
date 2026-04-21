@@ -10,7 +10,7 @@
             padding: 10px; 
             background: #111; 
             color: white; 
-            font-family: 'Segoe UI', sans-serif; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -22,13 +22,13 @@
             max-width: 100%;
             margin: 0 auto; 
             box-sizing: border-box;
-            touch-action: none; /* Zabrání scrollování obrazovky při hraní na mobilu */
+            touch-action: none; /* Zabrání nechtěnému scrollování při ovládání joystickem */
         }
 
         .ui-bar { 
             background: #222; 
             padding: 10px 15px; 
-            font-size: 20px; 
+            font-size: 18px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center;
@@ -37,7 +37,7 @@
             border-bottom: none; 
             border-radius: 10px 10px 0 0;
             box-sizing: border-box;
-            flex-wrap: wrap; /* Pro mobily */
+            flex-wrap: wrap; 
         }
         
         .record { color: #ffd700; }
@@ -56,6 +56,7 @@
 
         .no-cursor { cursor: none; }
         
+        /* Překryvná menu okna */
         .overlay { 
             position: absolute; 
             top: 0; 
@@ -70,29 +71,30 @@
             text-align: center; 
             z-index: 100;
             border-radius: 0 0 10px 10px;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
         }
         
         .hidden { display: none !important; }
         
-        h1 { font-size: 5vw; margin-bottom: 10px; color: #e74c3c; text-shadow: 2px 2px 0 #000; text-transform: uppercase; }
-        h2 { font-size: 4vw; margin-bottom: 20px; color: #f1c40f; }
-        .intro-text { font-size: 3vw; color: #f1c40f; font-weight: bold; margin-bottom: 15px; }
-        p { font-size: 2vw; margin-bottom: 30px; line-height: 1.5; color: #ccc;}
+        /* Texty přizpůsobené pro mobily i PC */
+        h1 { font-size: 40px; margin-bottom: 10px; color: #e74c3c; text-shadow: 2px 2px 0 #000; text-transform: uppercase; }
+        h2 { font-size: 28px; margin-bottom: 10px; color: #f1c40f; }
+        .intro-text { font-size: 20px; color: #f1c40f; font-weight: bold; margin-bottom: 15px; }
+        p { font-size: 16px; margin-bottom: 20px; line-height: 1.5; color: #ccc;}
         
         .btn { 
-            padding: 15px 30px; font-size: 20px; font-weight: bold; color: white; 
-            background: #2980b9; border: 4px solid #1f618d; border-radius: 10px; 
+            padding: 12px 24px; font-size: 20px; font-weight: bold; color: white; 
+            background: #2980b9; border: 3px solid #1f618d; border-radius: 8px; 
             cursor: pointer; transition: 0.2s; margin: 5px; text-transform: uppercase; 
         }
         .btn:hover { background: #3498db; transform: scale(1.05); }
         .btn-danger { background: #c0392b; border-color: #922b21; }
         .btn-danger:hover { background: #e74c3c; }
         
-        #countdown-text { font-size: 120px; font-weight: bold; color: #e74c3c; text-shadow: 0 0 40px rgba(231, 76, 60, 0.8); }
+        #countdown-text { font-size: 100px; font-weight: bold; color: #e74c3c; text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
 
-        /* JOYSTICK STYLY */
+        /* JOYSTICK VLEVO DOLE */
         .joystick-area {
             position: absolute;
             bottom: 20px;
@@ -103,7 +105,7 @@
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             z-index: 50;
-            display: none; /* Skryto v základu */
+            display: none; 
             touch-action: none;
         }
         .joystick-stick {
@@ -119,13 +121,12 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Aktivace dotykového módu */
         .touch-mode .joystick-area { display: block; }
-        .touch-mode .no-cursor { cursor: auto; } /* Na mobilu kurzor neřešíme */
+        .touch-mode .no-cursor { cursor: auto; }
 
         /* PŘEPÍNAČ ZAŘÍZENÍ */
         .device-toggle {
-            margin-top: 20px;
+            margin-top: 15px;
             background: #333;
             color: #aaa;
             border: 2px solid #555;
@@ -136,15 +137,6 @@
             transition: 0.2s;
         }
         .device-toggle:hover { background: #444; color: white; }
-
-        /* Media queries pro malé obrazovky (telefony) */
-        @media (max-width: 800px) {
-            h1 { font-size: 40px; }
-            .intro-text { font-size: 20px; }
-            p { font-size: 16px; }
-            .ui-bar { font-size: 16px; justify-content: space-around; }
-            .btn { font-size: 16px; padding: 10px 20px; }
-        }
     </style>
 </head>
 <body id="main-body">
@@ -166,8 +158,8 @@
 
         <div id="screen-start" class="overlay">
             <h1>PAJCRMAN</h1>
-            <div class="intro-text">"Máme konstruktéry, které musím donutit začít makat!"</div>
-            <p>Zažeň flákače z konstrukce k počítačům do 60 sekund!<br><br><b>PC:</b> Šipky / W A S D<br><b>Mobil:</b> Virtuální Joystick vlevo dole</p>
+            <div class="intro-text">"Máme konstruktéry, které musím donutit makat!"</div>
+            <p>Zažeň flákače z konstrukce k počítačům do 60s!<br><b>PC:</b> Šipky nebo W A S D<br><b>Mobil:</b> Joystick vlevo dole</p>
             <button class="btn" onclick="startCountdown()">Vlítnout na ně</button>
         </div>
 
@@ -187,7 +179,7 @@
 
         <div id="screen-lose" class="overlay hidden">
             <h1>KONEC HRY</h1>
-            <p style="color: #e74c3c; font-weight: bold; font-size: 28px;">Firma zkrachovala, konstrukce se uflákala.</p>
+            <p style="color: #e74c3c; font-weight: bold; font-size: 22px;">Firma zkrachovala, konstrukce se uflákala.</p>
             <div>
                 <button class="btn" onclick="resetGame()">Zkusit znovu zachránit firmu</button>
                 <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
@@ -199,6 +191,7 @@
 <button class="device-toggle" id="deviceToggleBtn" onclick="toggleTouchMode()">🎮 Přepnout na Dotykové ovládání</button>
 
 <script>
+// --- ZÁKLADNÍ NASTAVENÍ A ZABEZPEČENÍ ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const timerEl = document.getElementById('timer');
@@ -225,22 +218,24 @@ let timeLeft = 60, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
 
-// Dotykové ovládání proměnné
+// Bezpečné načtení localStorage (pokud je v prohlížeči blokováno, hra nespadne)
+let bestTime = Infinity;
+try {
+    let stored = localStorage.getItem('bestTimeHunter');
+    if(stored) bestTime = parseFloat(stored);
+} catch (e) { console.warn("Ukládání skóre je blokováno zařízením."); }
+if(bestTime !== Infinity) bestEl.innerText = bestTime;
+
+// --- DOTYKOVÉ OVLÁDÁNÍ ---
 let isTouchMode = false;
 let joyX = 0, joyY = 0;
 let joystickActive = false;
 
-let bestTime = localStorage.getItem('bestTimePajcrman') || Infinity;
-if(bestTime !== Infinity) bestEl.innerText = bestTime;
-
-// DETEKCE MOBILNÍHO ZAŘÍZENÍ PŘI NAČTENÍ
 if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window)) {
     setTouchMode(true);
 }
 
-function toggleTouchMode() {
-    setTouchMode(!isTouchMode);
-}
+function toggleTouchMode() { setTouchMode(!isTouchMode); }
 
 function setTouchMode(state) {
     isTouchMode = state;
@@ -253,11 +248,10 @@ function setTouchMode(state) {
     }
 }
 
-// JOYSTICK LOGIKA
 const joyArea = document.getElementById('joystick-area');
 const joyStick = document.getElementById('joystick-stick');
 let joyCenterX, joyCenterY;
-const maxJoyRadius = 40; // Jak daleko může klobouček zajet
+const maxJoyRadius = 40; 
 
 function handlePointerDown(e) {
     if(!isTouchMode) return;
@@ -271,13 +265,17 @@ function handlePointerDown(e) {
 
 function handlePointerMove(e) {
     if (!joystickActive) return;
-    e.preventDefault(); // Zabrání scrollování stránky
+    if (e.cancelable) e.preventDefault(); 
     
-    // Podpora pro dotyk i myš
-    let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-    let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    let clientX = e.clientX;
+    let clientY = e.clientY;
     
-    if(!clientX) return;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    }
+    
+    if (clientX === undefined) return;
 
     let dx = clientX - joyCenterX;
     let dy = clientY - joyCenterY;
@@ -290,27 +288,24 @@ function handlePointerMove(e) {
 
     joyX = dx / maxJoyRadius;
     joyY = dy / maxJoyRadius;
-
     joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 }
 
 function handlePointerUp(e) {
     joystickActive = false;
-    joyX = 0;
-    joyY = 0;
+    joyX = 0; joyY = 0;
     joyStick.style.transition = 'transform 0.2s';
     joyStick.style.transform = `translate(-50%, -50%)`;
 }
 
 joyArea.addEventListener('pointerdown', handlePointerDown);
-joyArea.addEventListener('touchstart', handlePointerDown);
+joyArea.addEventListener('touchstart', handlePointerDown, {passive: false});
 window.addEventListener('pointermove', handlePointerMove, {passive: false});
 window.addEventListener('touchmove', handlePointerMove, {passive: false});
 window.addEventListener('pointerup', handlePointerUp);
 window.addEventListener('touchend', handlePointerUp);
-window.addEventListener('pointercancel', handlePointerUp);
 
-
+// --- HERNÍ OBJEKTY ---
 function createWalls() {
     walls = [
         {x: 0, y: 0, w: WORLD_W, h: 50}, {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
@@ -327,33 +322,38 @@ function createWalls() {
 }
 
 class Coffee {
-    constructor() { this.spawn(); this.collected = false; }
+    constructor() { this.collected = false; this.spawn(); }
     spawn() {
-        if (Math.random() > 0.5) {
-            this.x = 1150 + Math.random() * 100; this.y = 100 + Math.random() * (WORLD_H - 200);
-        } else {
-            this.x = 100 + Math.random() * (WORLD_W - 200); this.y = 850 + Math.random() * 100;
-        }
+        let attempts = 0;
+        do {
+            if (Math.random() > 0.5) {
+                this.x = 1150 + Math.random() * 100; this.y = 100 + Math.random() * (WORLD_H - 200);
+            } else {
+                this.x = 100 + Math.random() * (WORLD_W - 200); this.y = 850 + Math.random() * 100;
+            }
+            attempts++;
+        } while (checkWallCollision(this.x, this.y, 30) && attempts < 50);
     }
     draw(cx, cy) {
-        if (!this.collected) { 
-            ctx.fillText("☕", this.x - cx, this.y - cy); 
-        }
+        if (!this.collected) ctx.fillText("☕", this.x - cx, this.y - cy); 
     }
 }
 
 class Slacker {
     constructor() {
-        this.spawn();
         this.state = 'idle';
         this.msg = ["Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe..."][Math.floor(Math.random()*5)];
         this.targetDesk = null;
+        this.spawn();
     }
 
     spawn() {
-        this.x = Math.random() * (WORLD_W - 200) + 100;
-        this.y = Math.random() * (WORLD_H - 200) + 100;
-        if (checkWallCollision(this.x, this.y, 30)) this.spawn();
+        let attempts = 0;
+        do {
+            this.x = Math.random() * (WORLD_W - 200) + 100;
+            this.y = Math.random() * (WORLD_H - 200) + 100;
+            attempts++;
+        } while (checkWallCollision(this.x, this.y, 30) && attempts < 50);
     }
 
     update() {
@@ -429,4 +429,181 @@ function generateWorld() {
     ];
 
     roomCenters.forEach(rc => {
-        for
+        for(let r = -1; r <= 1; r++) { 
+            for(let c = -1.5; c <= 1.5; c += 1) { 
+                desks.push({ x: rc.cx + c * 200, y: rc.cy + r * 160, occupied: false });
+            }
+        }
+    });
+
+    for(let i=0; i<20; i++) slackers.push(new Slacker());
+    for(let i=0; i<5; i++) coffees.push(new Coffee());
+
+    player.x = 1200; player.y = 900;
+    countEl.innerText = slackers.length;
+    timeLeft = 60;
+    timerEl.innerText = timeLeft.toFixed(1);
+    
+    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2));
+    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
+}
+
+// --- LOGIKA STAVŮ ---
+function hideAllScreens() {
+    screenStart.classList.add('hidden');
+    screenCountdown.classList.add('hidden');
+    screenWin.classList.add('hidden');
+    screenLose.classList.add('hidden');
+    canvas.classList.remove('no-cursor'); 
+}
+
+function resetGame() {
+    hideAllScreens();
+    screenStart.classList.remove('hidden');
+    gameState = 'menu';
+    generateWorld();
+}
+
+function startCountdown() {
+    hideAllScreens();
+    screenCountdown.classList.remove('hidden');
+    gameState = 'countdown';
+    let count = 5;
+    countdownText.innerText = count;
+    let cInt = setInterval(() => {
+        count--;
+        if(count > 0) { countdownText.innerText = count; } 
+        else if (count === 0) { countdownText.innerText = "START!"; } 
+        else { clearInterval(cInt); startGame(); }
+    }, 1000);
+}
+
+function startGame() {
+    hideAllScreens();
+    canvas.classList.add('no-cursor'); 
+    gameState = 'playing';
+    keys = {}; 
+    
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { 
+        if(gameState !== 'playing') return;
+        timeLeft -= 0.1; 
+        if(timeLeft <= 0) { timeLeft = 0; triggerLose(); }
+        timerEl.innerText = Math.max(0, timeLeft).toFixed(1); 
+    }, 100);
+}
+
+function triggerLose() {
+    gameState = 'lose';
+    clearInterval(timerInterval);
+    canvas.classList.remove('no-cursor'); 
+    setTimeout(() => { screenLose.classList.remove('hidden'); }, 1500);
+}
+
+function checkWin() {
+    let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length;
+    countEl.innerText = rem;
+    if(rem === 0) {
+        gameState = 'win';
+        clearInterval(timerInterval);
+        canvas.classList.remove('no-cursor');
+        
+        let timeTaken = parseFloat((60 - timeLeft).toFixed(1));
+        document.getElementById('win-time').innerText = timeTaken;
+        
+        // Bezpečné uložení rekordu
+        if(timeTaken < bestTime) { 
+            bestTime = timeTaken; 
+            try { localStorage.setItem('bestTimeHunter', bestTime); } catch(e){}
+            bestEl.innerText = bestTime; 
+        }
+        
+        setTimeout(() => {
+            hideAllScreens();
+            screenWin.classList.remove('hidden');
+        }, 2000);
+    }
+}
+
+function quitGame() {
+    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 40px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Jdi domů, Pajcrmane. Konstrukce je v bezpečí.</p>";
+}
+
+// --- VYKRESLOVÁNÍ A UPDATE ---
+function update() {
+    if(gameState !== 'playing') return;
+    
+    let dx = 0, dy = 0;
+    
+    if (keys['w'] || keys['arrowup']) dy -= player.speed; 
+    if (keys['s'] || keys['arrowdown']) dy += player.speed;
+    if (keys['a'] || keys['arrowleft']) dx -= player.speed; 
+    if (keys['d'] || keys['arrowright']) dx += player.speed;
+
+    if (isTouchMode && joystickActive) {
+        dx += joyX * player.speed;
+        dy += joyY * player.speed;
+    }
+
+    if (!checkWallCollision(player.x + dx, player.y, player.size)) player.x += dx;
+    if (!checkWallCollision(player.x, player.y + dy, player.size)) player.y += dy;
+
+    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2));
+    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
+
+    coffees.forEach(c => {
+        if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
+            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.4;
+            boostEl.innerText = "⚡ KOFEIN!";
+            setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
+        }
+    });
+    slackers.forEach(s => s.update());
+}
+
+function draw() {
+    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillStyle = "#34495e";
+    walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
+    
+    desks.forEach(d => {
+        ctx.fillStyle = "#555"; 
+        ctx.fillRect(d.x - camera.x - 30, d.y - camera.y - 20, 60, 40);
+        ctx.fillStyle = "white"; ctx.font = "30px Arial";
+        ctx.fillText("🖥️", d.x - camera.x, d.y - camera.y);
+    });
+    
+    coffees.forEach(c => c.draw(camera.x, camera.y));
+    slackers.forEach(s => { if(gameState === 'win') s.update(); s.draw(camera.x, camera.y); });
+
+    let px = player.x - camera.x, py = player.y - camera.y;
+    
+    if (gameState === 'win') {
+        danceFrame++;
+        let bounce = Math.abs(Math.sin(danceFrame * 0.15)) * 15; 
+        ctx.font = "40px Arial"; ctx.fillText("🏆", px + 20, py - 20 - bounce); 
+        ctx.font = "45px Arial"; ctx.fillText("🤓", px, py - bounce); 
+    } else if (gameState === 'lose') {
+        ctx.font = "45px Arial"; ctx.fillText("💀", px, py);
+    } else {
+        if(player.isBoosted && gameState === 'playing') { ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; }
+        ctx.font = "40px Arial"; ctx.fillText("🤓", px, py); ctx.shadowBlur = 0;
+        ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(px + 10, py - 5); ctx.lineTo(px + 30, py - 25); ctx.lineTo(px + 37, py - 18); ctx.stroke();
+    }
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+generateWorld();
+draw();
+</script>
+</body>
+</html>
