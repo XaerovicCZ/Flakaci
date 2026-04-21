@@ -2,24 +2,76 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Mistr Páčidlo: Hardcore Limit</title>
+    <title>Mistr Páčidlo: Korporátní pořádek</title>
     <style>
-        body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        canvas { background: #2c3e50; border: 4px solid #555; cursor: none; }
-        .ui { padding: 10px; font-size: 20px; display: flex; gap: 30px; font-weight: bold; background: #222; width: 100%; justify-content: center; border-bottom: 2px solid #444; }
+        body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* Obal pro hru a menu */
+        .game-wrapper { position: relative; display: inline-block; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        
+        canvas { background: #2c3e50; border: 4px solid #555; display: block; cursor: none; }
+        
+        .ui-bar { padding: 10px; font-size: 20px; display: flex; gap: 30px; font-weight: bold; background: #222; width: 1000px; box-sizing: border-box; justify-content: center; border: 4px solid #555; border-bottom: none; }
         .record { color: #ffd700; }
         #boost-indicator { color: #f39c12; min-width: 100px; text-align: center; }
+        
+        /* Overlay Menu (Překryvná okna) */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 10; cursor: default; }
+        .hidden { display: none !important; }
+        
+        h1 { font-size: 60px; margin-bottom: 10px; color: #e74c3c; text-shadow: 2px 2px 0 #000; }
+        h2 { font-size: 40px; margin-bottom: 30px; color: #f1c40f; }
+        p { font-size: 24px; margin-bottom: 40px; }
+        
+        .btn { padding: 15px 40px; font-size: 28px; font-weight: bold; color: white; background: #2980b9; border: 4px solid #2471a3; border-radius: 10px; cursor: pointer; transition: 0.2s; margin: 10px; text-transform: uppercase; }
+        .btn:hover { background: #3498db; transform: scale(1.05); }
+        .btn-danger { background: #c0392b; border-color: #922b21; }
+        .btn-danger:hover { background: #e74c3c; }
+        
+        #countdown-text { font-size: 150px; font-weight: bold; color: #e74c3c; text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
     </style>
 </head>
-<body>
+<body id="main-body">
 
-<div class="ui">
-    <div>Čas: <span id="timer">0.0</span>s</div>
+<div class="ui-bar">
+    <div>Čas: <span id="timer">60.0</span>s</div>
     <div>Zbývá nahnat: <span id="count">0</span></div>
     <div id="boost-indicator"></div>
     <div class="record">Rekord: <span id="best">--</span>s</div>
 </div>
-<canvas id="gameCanvas"></canvas>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="screen-start" class="overlay">
+        <h1>MISTR PÁČIDLO</h1>
+        <p>Zažeň všechny flákače k počítačům, než vyprší čas (60s)!<br>Pohyb: W A S D</p>
+        <button class="btn" onclick="startCountdown()">Start</button>
+    </div>
+
+    <div id="screen-countdown" class="overlay hidden">
+        <div id="countdown-text">5</div>
+    </div>
+
+    <div id="screen-win" class="overlay hidden">
+        <h1>MANAŽER MĚSÍCE!</h1>
+        <h2>Gratulujeme!</h2>
+        <p>Všichni poctivě pracují.<br>Tvůj čas: <span id="win-time">0</span>s</p>
+        <div>
+            <button class="btn" onclick="resetGame()">Znovu do práce</button>
+            <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+        </div>
+    </div>
+
+    <div id="screen-lose" class="overlay hidden">
+        <h1>VYHAZOV!</h1>
+        <p>Firma zkrachovala. Nestihl jsi to včas.</p>
+        <div>
+            <button class="btn" onclick="resetGame()">Zkusit znovu</button>
+            <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+        </div>
+    </div>
+</div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -29,26 +81,34 @@ const countEl = document.getElementById('count');
 const bestEl = document.getElementById('best');
 const boostEl = document.getElementById('boost-indicator');
 
+// Obrazovky
+const screenStart = document.getElementById('screen-start');
+const screenCountdown = document.getElementById('screen-countdown');
+const screenWin = document.getElementById('screen-win');
+const screenLose = document.getElementById('screen-lose');
+const countdownText = document.getElementById('countdown-text');
+
 const VIEW_W = 1000, VIEW_H = 650;
 const WORLD_W = 2400, WORLD_H = 1800;
 canvas.width = VIEW_W; canvas.height = VIEW_H;
+
+// HERNÍ STAVY: 'menu', 'countdown', 'playing', 'win', 'lose'
+let gameState = 'menu'; 
 
 let slackers = [], desks = [], walls = [], coffees = [];
 let player = { x: 1200, y: 900, size: 20, speed: 4.5, baseSpeed: 4.5, isBoosted: false }; 
 let camera = { x: 0, y: 0 };
 let keys = {};
-let timeLeft, timerInterval, gameActive = false;
-let bestTime = localStorage.getItem('bestTimeHardcore') || Infinity;
+let timeLeft = 60, timerInterval;
+let danceFrame = 0; // Pro animaci tancování
 
+let bestTime = localStorage.getItem('bestTimeCorporate') || Infinity;
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
 function createWalls() {
     walls = [
-        {x: 0, y: 0, w: WORLD_W, h: 50}, 
-        {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
-        {x: 0, y: 0, w: 50, h: WORLD_H}, 
-        {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, 
-        
+        {x: 0, y: 0, w: WORLD_W, h: 50}, {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
+        {x: 0, y: 0, w: 50, h: WORLD_H}, {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, 
         {x: 50, y: 800, w: 400, h: 40}, {x: 650, y: 800, w: 450, h: 40}, 
         {x: 1100, y: 50, w: 40, h: 300}, {x: 1100, y: 550, w: 40, h: 250}, 
         {x: 1300, y: 800, w: 450, h: 40}, {x: 1950, y: 800, w: 400, h: 40}, 
@@ -93,7 +153,7 @@ class Slacker {
     }
 
     update() {
-        if (this.state === 'working') return;
+        if (this.state === 'working' || gameState !== 'playing') return;
 
         let d = Math.hypot(player.x - this.x, player.y - this.y);
 
@@ -101,7 +161,6 @@ class Slacker {
             if (d < 220) {
                 this.state = 'running';
                 let angle = Math.atan2(this.y - player.y, this.x - player.x);
-                // MÍRNĚ ZRYCHLENÝ ÚTĚK FLÁKAČE (z 2.5 na 3.2)
                 this.move(Math.cos(angle) * 3.2, Math.sin(angle) * 3.2);
             } else {
                 this.state = 'idle';
@@ -119,19 +178,15 @@ class Slacker {
         }
 
         if (this.state === 'goingToWork' && this.targetDesk) {
-            let targetX = this.targetDesk.x + 15; 
-            let targetY = this.targetDesk.y;
+            let targetX = this.targetDesk.x + 15; let targetY = this.targetDesk.y;
             let distToDesk = Math.hypot(targetX - this.x, targetY - this.y);
 
             if (distToDesk < 15) {
                 this.state = 'working';
-                this.x = targetX; 
-                this.y = targetY;
+                this.x = targetX; this.y = targetY;
             } else {
                 let angle = Math.atan2(targetY - this.y, targetX - this.x);
-                // MÍRNĚ ZRYCHLENÁ CESTA KE STOLU (z 4 na 4.8)
-                this.x += Math.cos(angle) * 4.8;
-                this.y += Math.sin(angle) * 4.8;
+                this.x += Math.cos(angle) * 4.8; this.y += Math.sin(angle) * 4.8;
             }
         }
     }
@@ -149,7 +204,9 @@ class Slacker {
         if (this.state === 'goingToWork') icon = "🏃"; 
         if (this.state === 'working') icon = "👷"; 
         ctx.fillText(icon, sx - 16, sy + 12);
-        if (this.state === 'idle') {
+        
+        // Zobrazuj texty jen když se hraje a flákač stojí
+        if (this.state === 'idle' && gameState === 'playing') {
             ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "11px Arial";
             ctx.fillText(this.msg, sx - 15, sy - 25);
         }
@@ -160,7 +217,7 @@ function checkWallCollision(x, y, size) {
     return walls.some(w => x + size > w.x && x - size < w.x + w.w && y + size > w.y && y - size < w.y + w.h);
 }
 
-function initLevel() {
+function generateWorld() {
     createWalls();
     desks = []; slackers = []; coffees = [];
     
@@ -181,89 +238,89 @@ function initLevel() {
     for(let i=0; i<5; i++) coffees.push(new Coffee());
 
     player.x = 1200; player.y = 900;
-    
-    // ČASOVÝ LIMIT NASTAVEN NA 60 SEKUND
-    timeLeft = 60; 
-    gameActive = true;
     countEl.innerText = slackers.length;
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => { timeLeft -= 0.1; if(timeLeft<=0) gameOver(); timerEl.innerText = Math.max(0, timeLeft).toFixed(1); }, 100);
+    timeLeft = 60;
+    timerEl.innerText = timeLeft.toFixed(1);
+    
+    // Reset kamery na střed
+    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2));
+    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
 }
 
-function gameOver() { gameActive = false; alert("VYHAZOV! Šedesát sekund je pryč a firma krachuje."); initLevel(); }
+// UI LOGIKA
+function hideAllScreens() {
+    screenStart.classList.add('hidden');
+    screenCountdown.classList.add('hidden');
+    screenWin.classList.add('hidden');
+    screenLose.classList.add('hidden');
+}
+
+function resetGame() {
+    hideAllScreens();
+    screenStart.classList.remove('hidden');
+    gameState = 'menu';
+    generateWorld();
+}
+
+function startCountdown() {
+    hideAllScreens();
+    screenCountdown.classList.remove('hidden');
+    gameState = 'countdown';
+    
+    let count = 5;
+    countdownText.innerText = count;
+    
+    let cInt = setInterval(() => {
+        count--;
+        if(count > 0) {
+            countdownText.innerText = count;
+        } else if (count === 0) {
+            countdownText.innerText = "START!";
+        } else {
+            clearInterval(cInt);
+            startGame();
+        }
+    }, 1000);
+}
+
+function startGame() {
+    hideAllScreens();
+    gameState = 'playing';
+    keys = {}; // reset kláves, aby hráč nevyrazil předčasně
+    
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { 
+        if(gameState !== 'playing') return;
+        timeLeft -= 0.1; 
+        if(timeLeft <= 0) {
+            timeLeft = 0;
+            triggerLose(); 
+        }
+        timerEl.innerText = timeLeft.toFixed(1); 
+    }, 100);
+}
+
+function triggerLose() {
+    gameState = 'lose';
+    clearInterval(timerInterval);
+    screenLose.classList.remove('hidden');
+}
 
 function checkWin() {
     let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length;
     countEl.innerText = rem;
     if(rem === 0) {
-        gameActive = false; clearInterval(timerInterval);
+        gameState = 'win';
+        clearInterval(timerInterval);
         
-        // VÝPOČET ČASU UPRAVEN PRO 60 SEKUNDOVÝ LIMIT
-        let time = parseFloat((60 - timeLeft).toFixed(1));
+        let timeTaken = parseFloat((60 - timeLeft).toFixed(1));
+        document.getElementById('win-time').innerText = timeTaken;
         
-        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeHardcore', bestTime); bestEl.innerText = bestTime; }
-        alert("Manažer měsíce! Všichni makají pod minutu. Čas: " + time + "s");
-        initLevel();
-    }
-}
-
-function update() {
-    if(!gameActive) return;
-    let dx = 0, dy = 0;
-    if (keys['w']) dy -= player.speed; if (keys['s']) dy += player.speed;
-    if (keys['a']) dx -= player.speed; if (keys['d']) dx += player.speed;
-
-    if (!checkWallCollision(player.x + dx, player.y, player.size)) player.x += dx;
-    if (!checkWallCollision(player.x, player.y + dy, player.size)) player.y += dy;
-
-    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2));
-    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
-
-    coffees.forEach(c => {
-        if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
-            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.4;
-            boostEl.innerText = "⚡ KOFEIN!";
-            setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
+        if(timeTaken < bestTime) { 
+            bestTime = timeTaken; 
+            localStorage.setItem('bestTimeCorporate', bestTime); 
+            bestEl.innerText = bestTime; 
         }
-    });
-    slackers.forEach(s => s.update());
-}
-
-function draw() {
-    ctx.clearRect(0, 0, VIEW_W, VIEW_H);
-    
-    ctx.fillStyle = "#34495e";
-    walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
-    
-    desks.forEach(d => {
-        ctx.fillStyle = "#555"; 
-        ctx.fillRect(d.x - camera.x - 30, d.y - camera.y - 20, 60, 40);
-        ctx.fillStyle = "white"; ctx.font = "30px Arial";
-        ctx.fillText("🖥️", d.x - camera.x - 25, d.y - camera.y + 10);
-    });
-    
-    coffees.forEach(c => c.draw(camera.x, camera.y));
-    slackers.forEach(s => s.draw(camera.x, camera.y));
-
-    let px = player.x - camera.x, py = player.y - camera.y;
-    if(player.isBoosted) { ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; }
-    ctx.font = "42px Arial";
-    ctx.fillText("🤵", px - 22, py + 16);
-    ctx.shadowBlur = 0;
-    
-    ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(px + 12, py); ctx.lineTo(px + 40, py - 24); ctx.lineTo(px + 46, py - 18);
-    ctx.stroke();
-
-    update();
-    requestAnimationFrame(draw);
-}
-
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-initLevel();
-draw();
-</script>
-</body>
-</html>
+        
+        // Zpoždění vítězné obrazovky, aby hráč viděl tancování
+        setTimeout(() =>
