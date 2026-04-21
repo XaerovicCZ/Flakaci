@@ -96,6 +96,11 @@
         .btn-green:hover { background: #2ecc71; }
         .btn-orange { background: #e67e22; border-color: #d35400; }
         .btn-orange:hover { background: #f39c12; }
+
+        /* Tlačítka pro obtížnost */
+        .btn-diff { padding: 8px 16px; font-size: 16px; background: #444; border: 2px solid #222; opacity: 0.5; }
+        .btn-diff.active { background: #e74c3c; border-color: #c0392b; opacity: 1; }
+        .btn-diff-normal.active { background: #2980b9; border-color: #1f618d; opacity: 1; }
         
         #countdown-text { font-size: 100px; font-weight: bold; color: #e74c3c; text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
 
@@ -156,7 +161,7 @@
         <div>Čas: <span id="timer">60.0</span>s</div>
         <div>Konstruktéři: <span id="count">0</span></div>
         <div id="boost-indicator"></div>
-        <div class="record">Rekord: <span id="best">--</span>s</div>
+        <div class="record">Můj TOP <span id="mode-label"></span>: <span id="best">--</span>s</div>
     </div>
 
     <div style="position: relative;">
@@ -169,7 +174,14 @@
         <div id="screen-start" class="overlay">
             <h1>PAJCRMAN</h1>
             <div class="intro-text">"Máme konstruktéry, které musím donutit makat!"</div>
-            <p>Zažeň flákače z konstrukce k počítačům do 60s!<br><b>PC:</b> Šipky nebo W A S D<br><b>Mobil:</b> Joystick vlevo dole</p>
+            
+            <div style="margin-bottom: 20px;">
+                <button id="btn-normal" class="btn btn-diff btn-diff-normal active" onclick="setDifficulty(false)">Normální (60s)</button>
+                <button id="btn-hardcore" class="btn btn-diff" onclick="setDifficulty(true)">Hardcore 💀 (30s)</button>
+            </div>
+
+            <p style="margin-bottom: 15px;"><b>PC:</b> Šipky nebo W A S D &nbsp;|&nbsp; <b>Mobil:</b> Joystick</p>
+            
             <button class="btn" onclick="startCountdown()">Vlítnout na ně</button>
             <button class="btn btn-purple" onclick="showLeaderboard('screen-start')">🏆 Síň slávy</button>
         </div>
@@ -181,7 +193,7 @@
         <div id="screen-win" class="overlay hidden">
             <h1>PAJCRMAN ROKU!</h1>
             <h2>V konstrukci je klid.</h2>
-            <p>Všichni poctivě makají na výsecích.<br>Tvůj čas: <span id="win-time">0</span>s</p>
+            <p>Všichni poctivě makají na výsecích.<br>Tvůj čas: <span id="win-time">0</span>s <span id="win-mode" style="color:#e74c3c;"></span></p>
             
             <div style="margin: 15px 0;">
                 <p style="color:#f1c40f; margin-bottom: 5px;">Zapiš se do síně slávy na tomto zařízení:</p>
@@ -222,6 +234,7 @@ const timerEl = document.getElementById('timer');
 const countEl = document.getElementById('count');
 const bestEl = document.getElementById('best');
 const boostEl = document.getElementById('boost-indicator');
+const modeLabelEl = document.getElementById('mode-label');
 const wrapper = document.getElementById('game-wrapper');
 const toggleBtn = document.getElementById('deviceToggleBtn');
 
@@ -238,19 +251,46 @@ let slackers = [], desks = [], walls = [], coffees = [];
 let player = { x: 1200, y: 900, size: 20, speed: 4.5, baseSpeed: 4.5, isBoosted: false }; 
 let camera = { x: 0, y: 0 };
 let keys = {};
-let timeLeft = 60, timerInterval;
+let timeLeft, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
 let finalTimeGlobal = "0.0"; 
 let returnScreen = 'screen-start'; 
 
-let bestTime = Infinity;
-try {
-    let stored = localStorage.getItem('bestTimeHunter');
-    if(stored) bestTime = parseFloat(stored);
-} catch (e) { console.warn("Ukládání skóre je blokováno zařízením."); }
-if(bestTime !== Infinity) bestEl.innerText = bestTime;
+// --- OBTÍŽNOST ---
+let isHardcore = false;
+let bestTimeNormal = Infinity;
+let bestTimeHardcore = Infinity;
 
+try {
+    let storedN = localStorage.getItem('bestTimeHunterNormal');
+    if(storedN) bestTimeNormal = parseFloat(storedN);
+    
+    let storedH = localStorage.getItem('bestTimeHunterHardcore');
+    if(storedH) bestTimeHardcore = parseFloat(storedH);
+} catch (e) { console.warn("Ukládání blokováno."); }
+
+function updateBestUI() {
+    if (isHardcore) {
+        modeLabelEl.innerText = "(HC)";
+        modeLabelEl.style.color = "#e74c3c";
+        bestEl.innerText = bestTimeHardcore !== Infinity ? bestTimeHardcore : "--";
+    } else {
+        modeLabelEl.innerText = "";
+        bestEl.innerText = bestTimeNormal !== Infinity ? bestTimeNormal : "--";
+    }
+}
+
+function setDifficulty(hardcore) {
+    isHardcore = hardcore;
+    document.getElementById('btn-normal').classList.toggle('active', !hardcore);
+    document.getElementById('btn-hardcore').classList.toggle('active', hardcore);
+    updateBestUI();
+}
+
+updateBestUI();
+
+// --- DOTYKOVÉ OVLÁDÁNÍ ---
 let isTouchMode = false;
 let joyX = 0, joyY = 0;
 let joystickActive = false;
@@ -291,14 +331,8 @@ function handlePointerMove(e) {
     if (!joystickActive) return;
     if (e.cancelable) e.preventDefault(); 
     
-    let clientX = e.clientX;
-    let clientY = e.clientY;
-    
-    if (e.touches && e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-    }
-    
+    let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    let clientY = e.clientY || (e.touches && e.touches[0].clientY);
     if (clientX === undefined) return;
 
     let dx = clientX - joyCenterX;
@@ -345,7 +379,6 @@ function createWalls() {
 }
 
 class Coffee {
-    // Káva má nyní pevné souřadnice předané v konstruktoru
     constructor(x, y) { 
         this.x = x;
         this.y = y;
@@ -375,7 +408,6 @@ class Slacker {
 
     update() {
         if (this.state === 'working' || gameState !== 'playing') return;
-
         let d = Math.hypot(player.x - this.x, player.y - this.y);
 
         if (this.state === 'idle' || this.state === 'running') {
@@ -455,18 +487,14 @@ function generateWorld() {
 
     for(let i=0; i<20; i++) slackers.push(new Slacker());
     
-    // Pevné souřadnice pro kávu - přesně uprostřed hlavních chodeb!
     const coffeeSpots = [
-        {x: 1200, y: 400},  // Horní chodba
-        {x: 1200, y: 1400}, // Spodní chodba
-        {x: 600, y: 900},   // Levá chodba
-        {x: 1800, y: 900}   // Pravá chodba
+        {x: 1200, y: 400}, {x: 1200, y: 1400}, {x: 600, y: 900}, {x: 1800, y: 900}
     ];
     coffeeSpots.forEach(spot => coffees.push(new Coffee(spot.x, spot.y)));
 
     player.x = 1200; player.y = 900;
     countEl.innerText = slackers.length;
-    timeLeft = 60;
+    timeLeft = isHardcore ? 30 : 60;
     timerEl.innerText = timeLeft.toFixed(1);
     
     camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2));
@@ -508,6 +536,7 @@ function startGame() {
     canvas.classList.add('no-cursor'); 
     gameState = 'playing';
     keys = {}; 
+    timeLeft = isHardcore ? 30 : 60;
     
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => { 
@@ -533,17 +562,27 @@ function checkWin() {
         clearInterval(timerInterval);
         canvas.classList.remove('no-cursor');
         
-        let timeTaken = parseFloat((60 - timeLeft).toFixed(1));
+        let limit = isHardcore ? 30 : 60;
+        let timeTaken = parseFloat((limit - timeLeft).toFixed(1));
         finalTimeGlobal = timeTaken; 
+        
         document.getElementById('win-time').innerText = timeTaken;
+        document.getElementById('win-mode').innerText = isHardcore ? " [HARDCORE]" : "";
         
         try { document.getElementById('player-name').value = localStorage.getItem('hunter_player_name') || ''; } catch(e){}
         
-        if(timeTaken < bestTime) { 
-            bestTime = timeTaken; 
-            try { localStorage.setItem('bestTimeHunter', bestTime); } catch(e){}
-            bestEl.innerText = bestTime; 
+        if (isHardcore) {
+            if (timeTaken < bestTimeHardcore) {
+                bestTimeHardcore = timeTaken;
+                try { localStorage.setItem('bestTimeHunterHardcore', bestTimeHardcore); } catch(e){}
+            }
+        } else {
+            if (timeTaken < bestTimeNormal) {
+                bestTimeNormal = timeTaken;
+                try { localStorage.setItem('bestTimeHunterNormal', bestTimeNormal); } catch(e){}
+            }
         }
+        updateBestUI();
         
         setTimeout(() => {
             hideAllScreens();
@@ -552,28 +591,26 @@ function checkWin() {
     }
 }
 
-function quitGame() {
-    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 40px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Jdi domů, Pajcrmane. Konstrukce je v bezpečí.</p>";
-}
-
-// --- LOKÁLNÍ ŽEBŘÍČEK A SDÍLENÍ ---
 function saveToLocalLeaderboard() {
     let name = document.getElementById('player-name').value.trim() || "Pajcrman";
     try { localStorage.setItem('hunter_player_name', name); } catch(e){}
     
-    let scores = JSON.parse(localStorage.getItem('hunter_local_scores') || "[]");
-    scores.push({ name: name, time: parseFloat(finalTimeGlobal) });
+    let displayName = isHardcore ? name + " [HC]" : name;
+    
+    let scores = JSON.parse(localStorage.getItem('hunter_local_scores_v2') || "[]");
+    scores.push({ name: displayName, time: parseFloat(finalTimeGlobal), hc: isHardcore });
     scores.sort((a, b) => a.time - b.time);
     scores = scores.slice(0, 10); 
     
-    localStorage.setItem('hunter_local_scores', JSON.stringify(scores));
-    alert("Skóre uloženo do paměti tohoto zařízení!");
+    localStorage.setItem('hunter_local_scores_v2', JSON.stringify(scores));
+    alert("Skóre uloženo do síně slávy!");
     showLeaderboard('screen-win');
 }
 
 function copyResultToClipboard() {
     let name = document.getElementById('player-name').value.trim() || "Pajcrman";
-    let text = `🏆 PAJCRMAN ROKU: ${name} nahnal konstrukci k práci za ${finalTimeGlobal}s! Překonáš mě v Hunteru? Odkaz: ${window.location.href}`;
+    let modeText = isHardcore ? " v HARDCORE módu" : "";
+    let text = `🏆 PAJCRMAN ROKU: ${name} nahnal konstrukci k práci za ${finalTimeGlobal}s${modeText}! Překonáš mě v Hunteru? Odkaz: ${window.location.href}`;
     navigator.clipboard.writeText(text).then(() => {
         alert("Zkopírováno! Teď to vlož (Ctrl+V) kolegovi do chatu.");
     }).catch(err => {
@@ -587,7 +624,7 @@ function showLeaderboard(fromScreen) {
     document.getElementById('screen-leaderboard').classList.remove('hidden');
     let div = document.getElementById('leaderboard-content');
     
-    let scores = JSON.parse(localStorage.getItem('hunter_local_scores') || "[]");
+    let scores = JSON.parse(localStorage.getItem('hunter_local_scores_v2') || "[]");
     
     if(scores.length === 0) { 
         div.innerHTML = "Zatím tu žádný Pajcrman nenechal záznam."; 
@@ -596,7 +633,8 @@ function showLeaderboard(fromScreen) {
     
     let h = "";
     scores.forEach((s, i) => {
-        h += `<div class="leaderboard-row"><span>${i+1}. ${s.name}</span><span>${s.time}s</span></div>`;
+        let color = s.hc ? "#e74c3c" : "white"; // Červená pro hardcore
+        h += `<div class="leaderboard-row"><span style="color:${color}">${i+1}. ${s.name}</span><span style="color:${color}">${s.time}s</span></div>`;
     });
     div.innerHTML = h;
 }
@@ -606,7 +644,6 @@ function closeLeaderboard() {
     document.getElementById(returnScreen).classList.remove('hidden');
 }
 
-// --- UPDATE A DRAW ---
 function update() {
     if(gameState !== 'playing') return;
     
@@ -630,7 +667,10 @@ function update() {
 
     coffees.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
-            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.4;
+            c.collected = true; player.isBoosted = true; 
+            // V normálním módu 40% zrychlení (1.4), v hardcore jen 20% (1.2)
+            let boostMultiplier = isHardcore ? 1.2 : 1.4;
+            player.speed = player.baseSpeed * boostMultiplier;
             boostEl.innerText = "⚡ KOFEIN!";
             setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
         }
