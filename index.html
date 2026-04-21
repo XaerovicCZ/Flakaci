@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Mistr Páčidlo: Pořádek musí být!</title>
+    <title>Mistr Páčidlo: Efektivita ihned!</title>
     <style>
         body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         canvas { background: #2c3e50; border: 4px solid #555; cursor: none; }
@@ -15,7 +15,7 @@
 
 <div class="ui">
     <div>Čas: <span id="timer">0.0</span>s</div>
-    <div>Flákači: <span id="count">0</span></div>
+    <div>Zbývá nahnat: <span id="count">0</span></div>
     <div id="boost-indicator"></div>
     <div class="record">Rekord: <span id="best">--</span>s</div>
 </div>
@@ -34,11 +34,11 @@ const WORLD_W = 2200, WORLD_H = 1600;
 canvas.width = VIEW_W; canvas.height = VIEW_H;
 
 let slackers = [], desks = [], walls = [], coffees = [];
-let player = { x: 200, y: 200, size: 20, speed: 6, baseSpeed: 6, isBoosted: false };
+let player = { x: 200, y: 200, size: 20, speed: 6.5, baseSpeed: 6.5, isBoosted: false };
 let camera = { x: 0, y: 0 };
 let keys = {};
 let timeLeft, timerInterval, gameActive = false;
-let bestTime = localStorage.getItem('bestTimeOffice') || Infinity;
+let bestTime = localStorage.getItem('bestTimeOfficeV3') || Infinity;
 
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
@@ -48,12 +48,13 @@ function createWalls() {
         {x: 0, y: WORLD_H-40, w: WORLD_W, h: 40}, 
         {x: 0, y: 0, w: 40, h: WORLD_H}, 
         {x: WORLD_W-40, y: 0, w: 40, h: WORLD_H}, 
-        {x: 500, y: 0, w: 40, h: 600},
-        {x: 500, y: 800, w: 40, h: 800},
-        {x: 500, y: 800, w: 700, h: 40},
-        {x: 1400, y: 0, w: 40, h: 1100},
-        {x: 1400, y: 1300, w: 40, h: 300},
-        {x: 800, y: 400, w: 600, h: 40}
+        // Rozdělení místností
+        {x: 600, y: 0, w: 40, h: 650},
+        {x: 600, y: 950, w: 40, h: 650},
+        {x: 600, y: 950, w: 800, h: 40},
+        {x: 1400, y: 0, w: 40, h: 1200},
+        {x: 1400, y: 1400, w: 40, h: 200},
+        {x: 600, y: 500, w: 500, h: 40}
     ];
 }
 
@@ -73,14 +74,14 @@ class Coffee {
 class Slacker {
     constructor() {
         this.spawn();
-        this.state = 'idle'; // idle, running (scared), goingToWork (caught), working
-        this.msg = ["Chrrr...", "Zzz...", "Práce neuteče.", "Pohoda..."][Math.floor(Math.random()*4)];
+        this.state = 'idle'; // idle, running, goingToWork, working
+        this.msg = ["Zzz...", "Práce? Neznám.", "Chrrr..", "Dneska ne.."][Math.floor(Math.random()*4)];
         this.targetDesk = null;
     }
 
     spawn() {
-        this.x = Math.random() * (WORLD_W - 150) + 75;
-        this.y = Math.random() * (WORLD_H - 150) + 75;
+        this.x = Math.random() * (WORLD_W - 160) + 80;
+        this.y = Math.random() * (WORLD_H - 160) + 80;
         if (checkWallCollision(this.x, this.y, 25)) this.spawn();
     }
 
@@ -89,61 +90,71 @@ class Slacker {
 
         let d = Math.hypot(player.x - this.x, player.y - this.y);
 
-        // 1. Logika nahánění (vyděšený smajlík)
+        // STAV: Spí nebo Utíká (😨)
         if (this.state === 'idle' || this.state === 'running') {
             if (d < 180) {
                 this.state = 'running';
                 let angle = Math.atan2(this.y - player.y, this.x - player.x);
-                this.move(Math.cos(angle) * 3.5, Math.sin(angle) * 3.5);
+                this.move(Math.cos(angle) * 3.8, Math.sin(angle) * 3.8);
             } else {
                 this.state = 'idle';
             }
 
-            // 2. Chycení (přepnutí na běžce k počítači)
+            // ZÁSAH PÁČIDLEM -> Okamžitě počítáme jako chyceného
             if (d < 45) { 
                 this.state = 'goingToWork'; 
-                // Najde nejbližší volný stůl
                 let freeDesks = desks.filter(d => !d.occupied);
                 if(freeDesks.length > 0) {
                     this.targetDesk = freeDesks.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y))[0];
                     this.targetDesk.occupied = true;
                 }
+                checkWin(); // Zavoláme hned při chycení!
             }
         }
 
-        // 3. Cesta ke stolu
+        // STAV: Běží k počítači (🏃)
         if (this.state === 'goingToWork' && this.targetDesk) {
             let distToDesk = Math.hypot(this.targetDesk.x - this.x, this.targetDesk.y - this.y);
-            if (distToDesk < 10) {
+            if (distToDesk < 15) {
                 this.state = 'working';
-                checkWin();
             } else {
                 let angle = Math.atan2(this.targetDesk.y - this.y, this.targetDesk.x - this.x);
-                this.move(Math.cos(angle) * 4.5, Math.sin(angle) * 4.5);
+                this.move(Math.cos(angle) * 5, Math.sin(angle) * 5);
             }
         }
     }
 
     move(dx, dy) {
-        if (!checkWallCollision(this.x + dx, this.y, 15)) this.x += dx;
-        if (!checkWallCollision(this.x, this.y + dy, 15)) this.y += dy;
+        // Klouzání podél zdí (pokud narazí v jednom směru, zkusí aspoň druhý)
+        if (!checkWallCollision(this.x + dx, this.y, 15)) {
+            this.x += dx;
+        } else {
+            // Pokud nemůže vodorovně, zkusí aspoň trochu popojet svisle
+            if (!checkWallCollision(this.x, this.y + dy, 15)) this.y += dy*0.5;
+        }
+        
+        if (!checkWallCollision(this.x, this.y + dy, 15)) {
+            this.y += dy;
+        } else {
+            // Pokud nemůže svisle, zkusí aspoň trochu popojet vodorovně
+            if (!checkWallCollision(this.x + dx, this.y, 15)) this.x += dx*0.5;
+        }
     }
 
     draw(cx, cy) {
         let sx = this.x - cx, sy = this.y - cy;
         ctx.font = "32px Arial";
         
-        let icon = "😴"; // Výchozí - spící
-        if (this.state === 'running') icon = "😨"; // Vyděšený při nahánění
-        if (this.state === 'goingToWork') icon = "🏃"; // Chycený pádí ke stolu
-        if (this.state === 'working') icon = "👷"; // V uniformě u stolu
+        let icon = "😴"; 
+        if (this.state === 'running') icon = "😨"; 
+        if (this.state === 'goingToWork') icon = "🏃"; 
+        if (this.state === 'working') icon = "👷"; 
 
         ctx.fillText(icon, sx - 16, sy + 12);
         
         if (this.state === 'idle') {
-            ctx.fillStyle = "rgba(255,255,255,0.7)";
-            ctx.font = "12px Arial";
-            ctx.fillText(this.msg, sx - 20, sy - 25);
+            ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "11px Arial";
+            ctx.fillText(this.msg, sx - 15, sy - 25);
         }
     }
 }
@@ -155,33 +166,32 @@ function checkWallCollision(x, y, size) {
 function initLevel() {
     createWalls();
     desks = []; slackers = []; coffees = [];
-    // Generování stolů (vždy víc než lidí)
-    for(let i=0; i<18; i++) {
+    for(let i=0; i<25; i++) { // Víc stolů
         let dx = Math.random()*(WORLD_W-150)+75, dy = Math.random()*(WORLD_H-150)+75;
         if(!checkWallCollision(dx,dy,40)) desks.push({x:dx, y:dy, occupied:false}); else i--;
     }
-    // Generování flákačů
-    for(let i=0; i<14; i++) slackers.push(new Slacker());
-    // Generování kávy
+    for(let i=0; i<15; i++) slackers.push(new Slacker());
     for(let i=0; i<3; i++) coffees.push(new Coffee());
 
-    player.x = 150; player.y = 150;
-    timeLeft = 80; gameActive = true;
+    player.x = 100; player.y = 100;
+    timeLeft = 90; gameActive = true;
     countEl.innerText = slackers.length;
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => { timeLeft -= 0.1; if(timeLeft<=0) gameOver(); timerEl.innerText = Math.max(0, timeLeft).toFixed(1); }, 100);
 }
 
-function gameOver() { gameActive = false; alert("VYHAZOV! Příliš mnoho flákání."); initLevel(); }
+function gameOver() { gameActive = false; alert("VYHAZOV! Příliš pomalé nahánění."); initLevel(); }
 
 function checkWin() {
-    let rem = slackers.filter(s => s.state !== 'working').length;
+    // Teď počítáme jen ty, co jsou ještě spící nebo utíkající (tzn. ne ty, co už běží k práci)
+    let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length;
     countEl.innerText = rem;
+    
     if(rem === 0) {
         gameActive = false; clearInterval(timerInterval);
-        let time = parseFloat((80 - timeLeft).toFixed(1));
-        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeOffice', bestTime); bestEl.innerText = bestTime; }
-        alert("Dobrá práce! Všichni makají. Čas: " + time + "s");
+        let time = parseFloat((90 - timeLeft).toFixed(1));
+        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeOfficeV3', bestTime); bestEl.innerText = bestTime; }
+        alert("Hotovo! Všichni jsou na cestě k práci. Čas: " + time + "s");
         initLevel();
     }
 }
@@ -200,9 +210,9 @@ function update() {
 
     coffees.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
-            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.6;
+            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.7;
             boostEl.innerText = "⚡ KOFEIN!";
-            setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 7000);
+            setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
         }
     });
     slackers.forEach(s => s.update());
@@ -210,16 +220,12 @@ function update() {
 
 function draw() {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
-    
-    // Podlaha a zdi
     ctx.fillStyle = "#34495e";
     walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
     
-    // Stoly s počítači
     ctx.font = "35px Arial";
     desks.forEach(d => ctx.fillText("🖥️", d.x - camera.x - 18, d.y - camera.y + 15));
     
-    // Předměty a osoby
     coffees.forEach(c => c.draw(camera.x, camera.y));
     slackers.forEach(s => s.draw(camera.x, camera.y));
 
