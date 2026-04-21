@@ -12,12 +12,11 @@
             font-family: 'Segoe UI', sans-serif; 
         }
         
-        /* Responzivní obal, který se přizpůsobí displeji a neudělá zoom-bug */
         .game-container {
             position: relative;
             width: 1000px;
             max-width: 100%;
-            margin: 0 auto; /* Vycentrování na střed */
+            margin: 0 auto; 
             box-sizing: border-box;
         }
 
@@ -40,7 +39,7 @@
         
         canvas { 
             display: block; 
-            width: 100%; /* Plně responzivní k obalu */
+            width: 100%; 
             height: auto; 
             background: #2c3e50; 
             border: 4px solid #555; 
@@ -51,14 +50,13 @@
 
         .no-cursor { cursor: none; }
         
-        /* PŘEKRYVNÁ OKNA (Menu, Odpočet) */
         .overlay { 
             position: absolute; 
             top: 0; 
             left: 0; 
             width: 100%; 
             height: 100%; 
-            background: rgba(0,0,0,0.85); 
+            background: rgba(0,0,0,0.80); 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
@@ -120,8 +118,8 @@
         </div>
 
         <div id="screen-lose" class="overlay hidden">
-            <h1>VYHAZOV!</h1>
-            <p>Firma zkrachovala. Nestihl jsi to včas.</p>
+            <h1>Konec hry</h1>
+            <p style="color: #e74c3c; font-weight: bold; font-size: 28px;">Firma zkrachovala.</p>
             <div>
                 <button class="btn" onclick="resetGame()">Zkusit znovu</button>
                 <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
@@ -155,7 +153,7 @@ let timeLeft = 60, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
 
-let bestTime = localStorage.getItem('bestTimeCorporateV3') || Infinity;
+let bestTime = localStorage.getItem('bestTimeCorporateV4') || Infinity;
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
 function createWalls() {
@@ -217,7 +215,6 @@ class Slacker {
                 this.state = 'idle';
             }
 
-            // Mírně zvětšený dosah páčidla na 55px (spolehlivější zásah)
             if (d < 55) { 
                 this.state = 'goingToWork'; 
                 let freeDesks = desks.filter(d => !d.occupied);
@@ -257,7 +254,7 @@ class Slacker {
         if (this.state === 'goingToWork') icon = "🏃"; 
         if (this.state === 'working') icon = "👷"; 
         
-        ctx.fillText(icon, sx, sy); // Nyní perfektně vycentrováno
+        ctx.fillText(icon, sx, sy); 
         
         if (this.state === 'idle' && gameState === 'playing') {
             ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "12px Arial";
@@ -337,7 +334,7 @@ function startCountdown() {
 
 function startGame() {
     hideAllScreens();
-    canvas.classList.add('no-cursor'); // Zmizí myš, abys mohl hrát
+    canvas.classList.add('no-cursor'); 
     gameState = 'playing';
     keys = {}; 
     
@@ -349,15 +346,19 @@ function startGame() {
             timeLeft = 0;
             triggerLose(); 
         }
-        timerEl.innerText = timeLeft.toFixed(1); 
+        timerEl.innerText = Math.max(0, timeLeft).toFixed(1); 
     }, 100);
 }
 
 function triggerLose() {
     gameState = 'lose';
     clearInterval(timerInterval);
-    hideAllScreens();
-    screenLose.classList.remove('hidden');
+    canvas.classList.remove('no-cursor'); // Ukáže myš, ať se dá klikat
+    
+    // Zpoždění overlay obrazovky, abys viděl, že ses změnil na lebku
+    setTimeout(() => {
+        screenLose.classList.remove('hidden');
+    }, 1500);
 }
 
 function checkWin() {
@@ -366,18 +367,18 @@ function checkWin() {
     if(rem === 0) {
         gameState = 'win';
         clearInterval(timerInterval);
+        canvas.classList.remove('no-cursor');
         
         let timeTaken = parseFloat((60 - timeLeft).toFixed(1));
         document.getElementById('win-time').innerText = timeTaken;
         
         if(timeTaken < bestTime) { 
             bestTime = timeTaken; 
-            localStorage.setItem('bestTimeCorporateV3', bestTime); 
+            localStorage.setItem('bestTimeCorporateV4', bestTime); 
             bestEl.innerText = bestTime; 
         }
         
         setTimeout(() => {
-            hideAllScreens();
             screenWin.classList.remove('hidden');
         }, 2000);
     }
@@ -415,7 +416,6 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     
-    // Globální nastavení pro perfektní centrování všeho textu/emoji
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -436,35 +436,38 @@ function draw() {
         s.draw(camera.x, camera.y);
     });
 
-    // HRÁČ (Červený kruh + Páčidlo - spolehlivé řešení!)
     let px = player.x - camera.x, py = player.y - camera.y;
     
     if (gameState === 'win') {
+        // TANEČEK - GEEK S POHÁREM
         danceFrame++;
         let bounce = Math.abs(Math.sin(danceFrame * 0.15)) * 15; 
         
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath(); ctx.arc(px, py - bounce, player.size, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "white"; ctx.font = "25px Arial";
+        ctx.font = "40px Arial";
         ctx.fillText("🏆", px + 15, py - 20 - bounce); 
+        ctx.font = "45px Arial";
+        ctx.fillText("🤓", px, py - bounce); 
+        
+    } else if (gameState === 'lose') {
+        // LEBKA PŘI PROHŘE
+        ctx.font = "45px Arial";
+        ctx.fillText("💀", px, py);
+        
     } else {
+        // NORMÁLNÍ HRANÍ - GEEK S PÁČIDLEM
         if(player.isBoosted && gameState === 'playing') { 
             ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; 
-            ctx.fillStyle = "#f39c12";
-        } else {
-            ctx.fillStyle = "#e74c3c";
         }
         
-        // Kreslení těla hráče
-        ctx.beginPath(); ctx.arc(px, py, player.size, 0, Math.PI * 2); ctx.fill();
+        ctx.font = "40px Arial";
+        ctx.fillText("🤓", px, py);
         ctx.shadowBlur = 0;
         
-        // Kreslení páčidla
         ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(px + 5, py - 5); 
-        ctx.lineTo(px + 25, py - 25); 
-        ctx.lineTo(px + 32, py - 18);
+        ctx.moveTo(px + 10, py - 5); 
+        ctx.lineTo(px + 30, py - 25); 
+        ctx.lineTo(px + 37, py - 18);
         ctx.stroke();
     }
 
