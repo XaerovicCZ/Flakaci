@@ -44,35 +44,19 @@ if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
 function createWalls() {
     walls = [
-        // Obvodové zdi
         {x: 0, y: 0, w: WORLD_W, h: 50}, 
         {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
         {x: 0, y: 0, w: 50, h: WORLD_H}, 
         {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, 
         
-        // LEVÁ HORNÍ KANCELÁŘ
-        {x: 50, y: 800, w: 400, h: 40}, 
-        {x: 650, y: 800, w: 450, h: 40}, 
-        {x: 1100, y: 50, w: 40, h: 300}, 
-        {x: 1100, y: 550, w: 40, h: 250}, 
-
-        // PRAVÁ HORNÍ KANCELÁŘ
-        {x: 1300, y: 800, w: 450, h: 40}, 
-        {x: 1950, y: 800, w: 400, h: 40}, 
-        {x: 1300, y: 50, w: 40, h: 300}, 
-        {x: 1300, y: 550, w: 40, h: 250}, 
-
-        // LEVÁ DOLNÍ KANCELÁŘ
-        {x: 50, y: 1000, w: 400, h: 40}, 
-        {x: 650, y: 1000, w: 450, h: 40}, 
-        {x: 1100, y: 1040, w: 40, h: 260}, 
-        {x: 1100, y: 1500, w: 40, h: 250}, 
-
-        // PRAVÁ DOLNÍ KANCELÁŘ
-        {x: 1300, y: 1000, w: 450, h: 40}, 
-        {x: 1950, y: 1000, w: 400, h: 40}, 
-        {x: 1300, y: 1040, w: 40, h: 260}, 
-        {x: 1300, y: 1500, w: 40, h: 250}
+        {x: 50, y: 800, w: 400, h: 40}, {x: 650, y: 800, w: 450, h: 40}, 
+        {x: 1100, y: 50, w: 40, h: 300}, {x: 1100, y: 550, w: 40, h: 250}, 
+        {x: 1300, y: 800, w: 450, h: 40}, {x: 1950, y: 800, w: 400, h: 40}, 
+        {x: 1300, y: 50, w: 40, h: 300}, {x: 1300, y: 550, w: 40, h: 250}, 
+        {x: 50, y: 1000, w: 400, h: 40}, {x: 650, y: 1000, w: 450, h: 40}, 
+        {x: 1100, y: 1040, w: 40, h: 260}, {x: 1100, y: 1500, w: 40, h: 250}, 
+        {x: 1300, y: 1000, w: 450, h: 40}, {x: 1950, y: 1000, w: 400, h: 40}, 
+        {x: 1300, y: 1040, w: 40, h: 260}, {x: 1300, y: 1500, w: 40, h: 250}
     ];
 }
 
@@ -82,21 +66,15 @@ class Coffee {
         this.collected = false;
     }
     spawn() {
-        // Káva se nyní generuje výhradně v hlavních chodbách!
         if (Math.random() > 0.5) {
-            // Svislá chodba
-            this.x = 1150 + Math.random() * 100;
-            this.y = 100 + Math.random() * (WORLD_H - 200);
+            this.x = 1150 + Math.random() * 100; this.y = 100 + Math.random() * (WORLD_H - 200);
         } else {
-            // Vodorovná chodba
-            this.x = 100 + Math.random() * (WORLD_W - 200);
-            this.y = 850 + Math.random() * 100;
+            this.x = 100 + Math.random() * (WORLD_W - 200); this.y = 850 + Math.random() * 100;
         }
     }
     draw(cx, cy) {
         if (this.collected) return;
-        ctx.font = "30px Arial";
-        ctx.fillText("☕", this.x - cx - 15, this.y - cy + 10);
+        ctx.font = "30px Arial"; ctx.fillText("☕", this.x - cx - 15, this.y - cy + 10);
     }
 }
 
@@ -128,6 +106,7 @@ class Slacker {
                 this.state = 'idle';
             }
 
+            // CHYCENÍ!
             if (d < 45) { 
                 this.state = 'goingToWork'; 
                 let freeDesks = desks.filter(d => !d.occupied);
@@ -139,13 +118,23 @@ class Slacker {
             }
         }
 
+        // BĚH DO PRÁCE
         if (this.state === 'goingToWork' && this.targetDesk) {
-            let distToDesk = Math.hypot(this.targetDesk.x - this.x, this.targetDesk.y - this.y);
+            // Určíme pozici přesně na židli vedle počítače
+            let targetX = this.targetDesk.x + 15; 
+            let targetY = this.targetDesk.y;
+            let distToDesk = Math.hypot(targetX - this.x, targetY - this.y);
+
             if (distToDesk < 15) {
                 this.state = 'working';
+                // PERFEKTNÍ ZAROVNÁNÍ - flákač si přesně sedne
+                this.x = targetX; 
+                this.y = targetY;
             } else {
-                let angle = Math.atan2(this.targetDesk.y - this.y, this.targetDesk.x - this.x);
-                this.move(Math.cos(angle) * 5, Math.sin(angle) * 5);
+                let angle = Math.atan2(targetY - this.y, targetX - this.x);
+                // ADRENALIN: Ignorují kolize se zdí, běží vzdušnou čarou přímo ke stolu. Nejde se zaseknout!
+                this.x += Math.cos(angle) * 6;
+                this.y += Math.sin(angle) * 6;
             }
         }
     }
@@ -178,31 +167,23 @@ function initLevel() {
     createWalls();
     desks = []; slackers = []; coffees = [];
     
-    // STRUKTUROVANÝ OPEN SPACE: Pevné středy 4 kanceláří
     const roomCenters = [
-        {cx: 575, cy: 425},   // Levá horní
-        {cx: 1825, cy: 425},  // Pravá horní
-        {cx: 575, cy: 1375},  // Levá dolní
-        {cx: 1825, cy: 1375}  // Pravá dolní
+        {cx: 575, cy: 425}, {cx: 1825, cy: 425}, 
+        {cx: 575, cy: 1375}, {cx: 1825, cy: 1375}
     ];
 
-    // V každé místnosti vytvoříme 12 stolů (mřížka 4 sloupce, 3 řady)
     roomCenters.forEach(rc => {
-        for(let r = -1; r <= 1; r++) { // 3 řady
-            for(let c = -1.5; c <= 1.5; c += 1) { // 4 sloupce
-                desks.push({
-                    x: rc.cx + c * 200, 
-                    y: rc.cy + r * 160, 
-                    occupied: false
-                });
+        for(let r = -1; r <= 1; r++) { 
+            for(let c = -1.5; c <= 1.5; c += 1) { 
+                desks.push({ x: rc.cx + c * 200, y: rc.cy + r * 160, occupied: false });
             }
         }
     });
 
-    for(let i=0; i<20; i++) slackers.push(new Slacker()); // 20 lidí na 48 míst
+    for(let i=0; i<20; i++) slackers.push(new Slacker());
     for(let i=0; i<5; i++) coffees.push(new Coffee());
 
-    player.x = 1200; player.y = 900; // Začínáš v centru firmy
+    player.x = 1200; player.y = 900;
     timeLeft = 110; gameActive = true;
     countEl.innerText = slackers.length;
     if(timerInterval) clearInterval(timerInterval);
@@ -248,33 +229,25 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     
-    // Zdi
     ctx.fillStyle = "#34495e";
     walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
     
-    // Pracovní stoly (nyní s vizuálem samotného stolu)
     desks.forEach(d => {
-        // Vykreslení šedé desky stolu
         ctx.fillStyle = "#555"; 
         ctx.fillRect(d.x - camera.x - 30, d.y - camera.y - 20, 60, 40);
-        
-        // Vykreslení počítače
-        ctx.fillStyle = "white";
-        ctx.font = "30px Arial";
-        ctx.fillText("🖥️", d.x - camera.x - 15, d.y - camera.y + 10);
+        ctx.fillStyle = "white"; ctx.font = "30px Arial";
+        ctx.fillText("🖥️", d.x - camera.x - 25, d.y - camera.y + 10);
     });
     
     coffees.forEach(c => c.draw(camera.x, camera.y));
     slackers.forEach(s => s.draw(camera.x, camera.y));
 
-    // Hráč
     let px = player.x - camera.x, py = player.y - camera.y;
     if(player.isBoosted) { ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; }
     ctx.font = "42px Arial";
     ctx.fillText("🤵", px - 22, py + 16);
     ctx.shadowBlur = 0;
     
-    // Páčidlo
     ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(px + 12, py); ctx.lineTo(px + 40, py - 24); ctx.lineTo(px + 46, py - 18);
