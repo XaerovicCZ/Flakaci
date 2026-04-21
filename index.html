@@ -1,20 +1,8 @@
-Chyba byla v tom, že starý generátor zdí tvořil místnosti náhodně a občas se mu podařilo postavit "vězení" bez dveří. Navíc hrozilo, že se stůl objeví přímo ve dveřích a ucpe je. 
-
-Vzal jsem to teď do vlastních rukou a **matematicky navrhl půdorys firmy**. 
-
-### Co se změnilo v této verzi:
-1.  **Garantované dveře (Křížový půdorys):** Mapa je nyní striktně rozdělena na 4 velké rohových kanceláře. Mezi nimi vede jedna obrovská horizontální a jedna vertikální chodba (jako kříž). Každá místnost má dvoje široké dveře. **Nikdo už se nemůže zaseknout.**
-2.  **Bezpečné spawnování:** Počítače (stoly) mají nyní zákaz objevovat se na chodbách a poblíž dveří. Vždycky se zrodí jen uvnitř kanceláří u stěn. Tím se uvolnily všechny průchody.
-3.  **Hranice světa:** Zesílil jsem vnější zdi a přidal kontrolu. Flákač ani hráč už fyzicky nemůžou překročit bariéru herní mapy.
-
-### Finální odladěný kód:
-
-```html
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Mistr Páčidlo: Dokonalá kancelář</title>
+    <title>Mistr Páčidlo: Korporátní pořádek</title>
     <style>
         body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         canvas { background: #2c3e50; border: 4px solid #555; cursor: none; }
@@ -46,42 +34,41 @@ const WORLD_W = 2400, WORLD_H = 1800;
 canvas.width = VIEW_W; canvas.height = VIEW_H;
 
 let slackers = [], desks = [], walls = [], coffees = [];
-let player = { x: 1200, y: 900, size: 20, speed: 6.5, baseSpeed: 6.5, isBoosted: false }; // Začíná uprostřed mapy
+let player = { x: 1200, y: 900, size: 20, speed: 6.5, baseSpeed: 6.5, isBoosted: false }; 
 let camera = { x: 0, y: 0 };
 let keys = {};
 let timeLeft, timerInterval, gameActive = false;
-let bestTime = localStorage.getItem('bestTimeOfficeV5') || Infinity;
+let bestTime = localStorage.getItem('bestTimeCorporate') || Infinity;
 
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
-// Pevně daný půdorys: 4 obří kanceláře a široká chodba uprostřed
 function createWalls() {
     walls = [
-        // Tlusté vnější zdi (aby nikdo nevypadl z mapy)
+        // Obvodové zdi
         {x: 0, y: 0, w: WORLD_W, h: 50}, 
         {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
         {x: 0, y: 0, w: 50, h: WORLD_H}, 
         {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, 
         
-        // LEVÁ HORNÍ KANCELÁŘ (Dveře vpravo a dole)
+        // LEVÁ HORNÍ KANCELÁŘ
         {x: 50, y: 800, w: 400, h: 40}, 
-        {x: 650, y: 800, w: 450, h: 40}, // Mezera (dveře) šířka 200px
+        {x: 650, y: 800, w: 450, h: 40}, 
         {x: 1100, y: 50, w: 40, h: 300}, 
-        {x: 1100, y: 550, w: 40, h: 250}, // Mezera (dveře) šířka 200px
+        {x: 1100, y: 550, w: 40, h: 250}, 
 
-        // PRAVÁ HORNÍ KANCELÁŘ (Dveře vlevo a dole)
+        // PRAVÁ HORNÍ KANCELÁŘ
         {x: 1300, y: 800, w: 450, h: 40}, 
         {x: 1950, y: 800, w: 400, h: 40}, 
         {x: 1300, y: 50, w: 40, h: 300}, 
         {x: 1300, y: 550, w: 40, h: 250}, 
 
-        // LEVÁ DOLNÍ KANCELÁŘ (Dveře vpravo a nahoře)
+        // LEVÁ DOLNÍ KANCELÁŘ
         {x: 50, y: 1000, w: 400, h: 40}, 
         {x: 650, y: 1000, w: 450, h: 40}, 
         {x: 1100, y: 1040, w: 40, h: 260}, 
         {x: 1100, y: 1500, w: 40, h: 250}, 
 
-        // PRAVÁ DOLNÍ KANCELÁŘ (Dveře vlevo a nahoře)
+        // PRAVÁ DOLNÍ KANCELÁŘ
         {x: 1300, y: 1000, w: 450, h: 40}, 
         {x: 1950, y: 1000, w: 400, h: 40}, 
         {x: 1300, y: 1040, w: 40, h: 260}, 
@@ -95,9 +82,16 @@ class Coffee {
         this.collected = false;
     }
     spawn() {
-        this.x = Math.random() * (WORLD_W - 200) + 100;
-        this.y = Math.random() * (WORLD_H - 200) + 100;
-        if (checkWallCollision(this.x, this.y, 30)) this.spawn();
+        // Káva se nyní generuje výhradně v hlavních chodbách!
+        if (Math.random() > 0.5) {
+            // Svislá chodba
+            this.x = 1150 + Math.random() * 100;
+            this.y = 100 + Math.random() * (WORLD_H - 200);
+        } else {
+            // Vodorovná chodba
+            this.x = 100 + Math.random() * (WORLD_W - 200);
+            this.y = 850 + Math.random() * 100;
+        }
     }
     draw(cx, cy) {
         if (this.collected) return;
@@ -110,14 +104,13 @@ class Slacker {
     constructor() {
         this.spawn();
         this.state = 'idle';
-        this.msg = ["Zzz...", "Nuda...", "Chrrr..", "Ani hnout."][Math.floor(Math.random()*4)];
+        this.msg = ["Zzz...", "Schůzka?", "Ať už je pátek.", "Pauza!"][Math.floor(Math.random()*4)];
         this.targetDesk = null;
     }
 
     spawn() {
         this.x = Math.random() * (WORLD_W - 200) + 100;
         this.y = Math.random() * (WORLD_H - 200) + 100;
-        // Pokud se zrodí ve zdi nebo mimo mapu, zkusí to znovu
         if (checkWallCollision(this.x, this.y, 30)) this.spawn();
     }
 
@@ -185,27 +178,32 @@ function initLevel() {
     createWalls();
     desks = []; slackers = []; coffees = [];
     
-    // Generování stolů tak, aby nikdy neblokovaly dveře a chodby
-    let deskAttempts = 0;
-    while(desks.length < 35 && deskAttempts < 1000) {
-        deskAttempts++;
-        let dx = Math.random()*(WORLD_W-160)+80;
-        let dy = Math.random()*(WORLD_H-160)+80;
-        
-        // Zakázané zóny (velké centrální chodby), aby stoly neucpaly průchod
-        let inVertHallway = (dx > 1000 && dx < 1400);
-        let inHorizHallway = (dy > 700 && dy < 1100);
-        
-        if(!inVertHallway && !inHorizHallway && !checkWallCollision(dx,dy,45)) {
-            desks.push({x:dx, y:dy, occupied:false});
+    // STRUKTUROVANÝ OPEN SPACE: Pevné středy 4 kanceláří
+    const roomCenters = [
+        {cx: 575, cy: 425},   // Levá horní
+        {cx: 1825, cy: 425},  // Pravá horní
+        {cx: 575, cy: 1375},  // Levá dolní
+        {cx: 1825, cy: 1375}  // Pravá dolní
+    ];
+
+    // V každé místnosti vytvoříme 12 stolů (mřížka 4 sloupce, 3 řady)
+    roomCenters.forEach(rc => {
+        for(let r = -1; r <= 1; r++) { // 3 řady
+            for(let c = -1.5; c <= 1.5; c += 1) { // 4 sloupce
+                desks.push({
+                    x: rc.cx + c * 200, 
+                    y: rc.cy + r * 160, 
+                    occupied: false
+                });
+            }
         }
-    }
+    });
 
-    for(let i=0; i<18; i++) slackers.push(new Slacker());
-    for(let i=0; i<4; i++) coffees.push(new Coffee());
+    for(let i=0; i<20; i++) slackers.push(new Slacker()); // 20 lidí na 48 míst
+    for(let i=0; i<5; i++) coffees.push(new Coffee());
 
-    player.x = 1200; player.y = 900; // Hráč začíná v centru
-    timeLeft = 100; gameActive = true;
+    player.x = 1200; player.y = 900; // Začínáš v centru firmy
+    timeLeft = 110; gameActive = true;
     countEl.innerText = slackers.length;
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => { timeLeft -= 0.1; if(timeLeft<=0) gameOver(); timerEl.innerText = Math.max(0, timeLeft).toFixed(1); }, 100);
@@ -218,9 +216,9 @@ function checkWin() {
     countEl.innerText = rem;
     if(rem === 0) {
         gameActive = false; clearInterval(timerInterval);
-        let time = parseFloat((100 - timeLeft).toFixed(1));
-        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeOfficeV5', bestTime); bestEl.innerText = bestTime; }
-        alert("Paráda! Každý maká. Čas: " + time + "s");
+        let time = parseFloat((110 - timeLeft).toFixed(1));
+        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeCorporate', bestTime); bestEl.innerText = bestTime; }
+        alert("Manažer měsíce! Všichni makají. Čas: " + time + "s");
         initLevel();
     }
 }
@@ -254,9 +252,17 @@ function draw() {
     ctx.fillStyle = "#34495e";
     walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
     
-    // Počítače
-    ctx.font = "35px Arial";
-    desks.forEach(d => ctx.fillText("🖥️", d.x - camera.x - 18, d.y - camera.y + 15));
+    // Pracovní stoly (nyní s vizuálem samotného stolu)
+    desks.forEach(d => {
+        // Vykreslení šedé desky stolu
+        ctx.fillStyle = "#555"; 
+        ctx.fillRect(d.x - camera.x - 30, d.y - camera.y - 20, 60, 40);
+        
+        // Vykreslení počítače
+        ctx.fillStyle = "white";
+        ctx.font = "30px Arial";
+        ctx.fillText("🖥️", d.x - camera.x - 15, d.y - camera.y + 10);
+    });
     
     coffees.forEach(c => c.draw(camera.x, camera.y));
     slackers.forEach(s => s.draw(camera.x, camera.y));
@@ -285,4 +291,3 @@ draw();
 </script>
 </body>
 </html>
-```
