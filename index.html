@@ -34,7 +34,8 @@ const WORLD_W = 2400, WORLD_H = 1800;
 canvas.width = VIEW_W; canvas.height = VIEW_H;
 
 let slackers = [], desks = [], walls = [], coffees = [];
-let player = { x: 1200, y: 900, size: 20, speed: 6.5, baseSpeed: 6.5, isBoosted: false }; 
+// ZPOMALENÝ HRÁČ
+let player = { x: 1200, y: 900, size: 20, speed: 4.5, baseSpeed: 4.5, isBoosted: false }; 
 let camera = { x: 0, y: 0 };
 let keys = {};
 let timeLeft, timerInterval, gameActive = false;
@@ -101,12 +102,12 @@ class Slacker {
             if (d < 220) {
                 this.state = 'running';
                 let angle = Math.atan2(this.y - player.y, this.x - player.x);
-                this.move(Math.cos(angle) * 3.8, Math.sin(angle) * 3.8);
+                // ZPOMALENÝ ÚTĚK FLÁKAČE
+                this.move(Math.cos(angle) * 2.5, Math.sin(angle) * 2.5);
             } else {
                 this.state = 'idle';
             }
 
-            // CHYCENÍ!
             if (d < 45) { 
                 this.state = 'goingToWork'; 
                 let freeDesks = desks.filter(d => !d.occupied);
@@ -118,23 +119,20 @@ class Slacker {
             }
         }
 
-        // BĚH DO PRÁCE
         if (this.state === 'goingToWork' && this.targetDesk) {
-            // Určíme pozici přesně na židli vedle počítače
             let targetX = this.targetDesk.x + 15; 
             let targetY = this.targetDesk.y;
             let distToDesk = Math.hypot(targetX - this.x, targetY - this.y);
 
             if (distToDesk < 15) {
                 this.state = 'working';
-                // PERFEKTNÍ ZAROVNÁNÍ - flákač si přesně sedne
                 this.x = targetX; 
                 this.y = targetY;
             } else {
                 let angle = Math.atan2(targetY - this.y, targetX - this.x);
-                // ADRENALIN: Ignorují kolize se zdí, běží vzdušnou čarou přímo ke stolu. Nejde se zaseknout!
-                this.x += Math.cos(angle) * 6;
-                this.y += Math.sin(angle) * 6;
+                // ZPOMALENÁ CESTA KE STOLU (No-clip)
+                this.x += Math.cos(angle) * 4;
+                this.y += Math.sin(angle) * 4;
             }
         }
     }
@@ -218,7 +216,8 @@ function update() {
 
     coffees.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
-            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.7;
+            // ZMÍRNĚNÝ KOFEIN (násobič z 1.7 na 1.4)
+            c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.4;
             boostEl.innerText = "⚡ KOFEIN!";
             setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
         }
