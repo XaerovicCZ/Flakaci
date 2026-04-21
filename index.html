@@ -183,6 +183,9 @@
             
             <button class="btn" onclick="startCountdown()">Vlítnout na ně</button>
             <button class="btn btn-purple" onclick="showLeaderboard('screen-start')">🏆 Síň slávy</button>
+            
+            <br>
+            <button class="btn btn-danger" onclick="resetScores()" style="font-size: 12px; padding: 6px 12px; margin-top: 20px; opacity: 0.8;">🗑️ Vymazat rekordy</button>
         </div>
 
         <div id="screen-countdown" class="overlay hidden">
@@ -205,6 +208,8 @@
                 <button class="btn" onclick="resetGame()">Další kontrola</button>
                 <button class="btn btn-purple" onclick="showLeaderboard('screen-win')">🏆 Síň slávy</button>
             </div>
+            
+            <button class="btn btn-danger" onclick="resetScores()" style="font-size: 12px; padding: 6px 12px; margin-top: 20px; opacity: 0.8;">🗑️ Vymazat rekordy</button>
         </div>
 
         <div id="screen-lose" class="overlay hidden">
@@ -214,6 +219,8 @@
                 <button class="btn" onclick="resetGame()">Zkusit znovu zachránit firmu</button>
                 <button class="btn btn-purple" onclick="showLeaderboard('screen-lose')">🏆 Síň slávy</button>
             </div>
+            
+            <button class="btn btn-danger" onclick="resetScores()" style="font-size: 12px; padding: 6px 12px; margin-top: 20px; opacity: 0.8;">🗑️ Vymazat rekordy</button>
         </div>
 
         <div id="screen-leaderboard" class="overlay hidden">
@@ -288,6 +295,23 @@ function setDifficulty(hardcore) {
 }
 
 updateBestUI();
+
+// --- VYMAZÁNÍ REKORDŮ ---
+function resetScores() {
+    if (confirm("Opravdu chceš vymazat všechny místní rekordy a síň slávy? (Tuto akci nelze vrátit)")) {
+        try {
+            localStorage.removeItem('bestTimeHunterNormal');
+            localStorage.removeItem('bestTimeHunterHardcore');
+            localStorage.removeItem('hunter_local_scores_v2');
+            bestTimeNormal = Infinity;
+            bestTimeHardcore = Infinity;
+            updateBestUI();
+            alert("Všechny rekordy a Síň slávy byly smazány!");
+        } catch (e) {
+            alert("Nepodařilo se smazat data. Zařízení možná blokuje paměť.");
+        }
+    }
+}
 
 // --- DOTYKOVÉ OVLÁDÁNÍ ---
 let isTouchMode = false;
@@ -392,14 +416,12 @@ class Slacker {
     constructor() {
         this.state = 'idle';
         
-        // Rozšířené výmluvy při flákání (idle/running)
         this.idleMsgs = [
             "Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe...",
             "Zrovna to renderuju.", "Aktualizujou se mi Windows.", "Ono se to seklo.", "Přemýšlím nad výsekem.",
             "Schvaluje se to u šéfa.", "Hledám myš.", "Restartuju komp."
         ];
         
-        // Nové hlášky po chycení (goingToWork)
         this.caughtMsgs = [
             "Ale já udělal hodně!", "Ale ono to fakt nejde pracovat!", "Mám blbý den dnes...", 
             "Jdi s tím pajcrem do prdele!", "Už jdu, už jdu!", "To je šikana!", "Vždyť už skoro klikám."
@@ -416,7 +438,6 @@ class Slacker {
             this.x = Math.random() * (WORLD_W - 200) + 100;
             this.y = Math.random() * (WORLD_H - 200) + 100;
             attempts++;
-        // Nová podmínka: Nekolidovat se zdí a NEBÝT v okruhu 350px od hráče (1200, 900)
         } while ((checkWallCollision(this.x, this.y, 30) || Math.hypot(this.x - 1200, this.y - 900) < 350) && attempts < 50);
     }
 
@@ -433,10 +454,8 @@ class Slacker {
                 this.state = 'idle';
             }
 
-            // CHYCENÍ!
             if (d < 55) { 
                 this.state = 'goingToWork'; 
-                // Změna hlášky po zásahu
                 this.msg = this.caughtMsgs[Math.floor(Math.random() * this.caughtMsgs.length)];
                 
                 let freeDesks = desks.filter(d => !d.occupied);
@@ -453,7 +472,6 @@ class Slacker {
             let distToDesk = Math.hypot(targetX - this.x, targetY - this.y);
 
             if (distToDesk < 15) {
-                // DOSAŽENÍ STOLU - Začne pracovat (tím pádem už se nebudou vykreslovat hlášky)
                 this.state = 'working';
                 this.x = targetX; this.y = targetY;
             } else {
@@ -477,16 +495,15 @@ class Slacker {
         if (this.state === 'working') icon = "👷"; 
         ctx.fillText(icon, sx, sy); 
         
-        // Zobrazení textů: Kreslí se VŽDY, POKUD SE NEPRACUJE
         if (this.state !== 'working' && gameState === 'playing') {
             if (this.state === 'goingToWork') {
-                ctx.fillStyle = "#e74c3c"; // Červená pro hysterii
+                ctx.fillStyle = "#e74c3c"; 
                 ctx.font = "bold 13px Arial";
             } else if (this.state === 'running') {
-                ctx.fillStyle = "#f39c12"; // Oranžová pro paniku
+                ctx.fillStyle = "#f39c12"; 
                 ctx.font = "bold 12px Arial";
             } else {
-                ctx.fillStyle = "rgba(255,255,255,0.7)"; // Klídek
+                ctx.fillStyle = "rgba(255,255,255,0.7)"; 
                 ctx.font = "12px Arial";
             }
             ctx.fillText(this.msg, sx, sy - 35);
