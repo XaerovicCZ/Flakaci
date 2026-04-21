@@ -4,61 +4,54 @@
     <meta charset="UTF-8">
     <title>Mistr Páčidlo: Finální Verze</title>
     <style>
-        /* ZÁKLADNÍ STRÁNKA */
         body { 
             margin: 0; 
+            padding: 20px; 
             background: #111; 
             color: white; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; /* Zabrání oříznutí na malých monitorech */
-            padding: 20px;
-            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif; 
         }
         
-        /* HORNÍ LIŠTA */
+        /* Responzivní obal, který se přizpůsobí displeji a neudělá zoom-bug */
+        .game-container {
+            position: relative;
+            width: 1000px;
+            max-width: 100%;
+            margin: 0 auto; /* Vycentrování na střed */
+            box-sizing: border-box;
+        }
+
         .ui-bar { 
-            width: 1000px; /* Pevná šířka přesně jako hra */
+            background: #222; 
             padding: 15px 20px; 
             font-size: 22px; 
             display: flex; 
-            justify-content: space-between; /* Krásně rozloží prvky vedle sebe */
+            justify-content: space-between; 
             align-items: center;
             font-weight: bold; 
-            background: #222; 
-            box-sizing: border-box; 
             border: 4px solid #555; 
             border-bottom: none; 
             border-radius: 10px 10px 0 0;
+            box-sizing: border-box;
         }
+        
         .record { color: #ffd700; }
         #boost-indicator { color: #f39c12; min-width: 120px; text-align: center; }
         
-        /* OBAL HRY (Krabice držící vše pohromadě) */
-        .game-wrapper { 
-            position: relative; 
-            width: 1000px; 
-            height: 650px; 
-            border: 4px solid #555; 
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.8); 
-            overflow: hidden; /* Zabrání vytečení menu mimo rámeček */
-            background: #2c3e50;
-        }
-        
         canvas { 
             display: block; 
-            width: 1000px; 
-            height: 650px; 
+            width: 100%; /* Plně responzivní k obalu */
+            height: auto; 
+            background: #2c3e50; 
+            border: 4px solid #555; 
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+            box-sizing: border-box;
         }
 
-        /* Třída pro skrytí myši (přidává se jen během hraní) */
         .no-cursor { cursor: none; }
         
-        /* PŘEKRYVNÁ MENU OKNA */
+        /* PŘEKRYVNÁ OKNA (Menu, Odpočet) */
         .overlay { 
             position: absolute; 
             top: 0; 
@@ -71,77 +64,68 @@
             align-items: center; 
             justify-content: center; 
             text-align: center; 
-            z-index: 100; /* Vždy nahoře */
+            z-index: 100;
+            border-radius: 0 0 10px 10px;
         }
         
-        /* SKRÝVÁNÍ PRVKŮ */
         .hidden { display: none !important; }
         
-        /* TEXTY V MENU */
-        h1 { font-size: 60px; margin-bottom: 10px; color: #e74c3c; text-shadow: 3px 3px 0 #000; text-transform: uppercase; }
-        h2 { font-size: 40px; margin-bottom: 20px; color: #f1c40f; }
-        p { font-size: 24px; margin-bottom: 40px; line-height: 1.5; }
+        h1 { font-size: 55px; margin-bottom: 10px; color: #e74c3c; text-shadow: 3px 3px 0 #000; text-transform: uppercase; }
+        h2 { font-size: 35px; margin-bottom: 20px; color: #f1c40f; }
+        p { font-size: 22px; margin-bottom: 40px; line-height: 1.5; color: #ccc;}
         
-        /* TLAČÍTKA */
         .btn { 
-            padding: 15px 40px; 
-            font-size: 26px; 
-            font-weight: bold; 
-            color: white; 
-            background: #2980b9; 
-            border: 4px solid #1f618d; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            margin: 10px; 
-            text-transform: uppercase; 
+            padding: 15px 40px; font-size: 24px; font-weight: bold; color: white; 
+            background: #2980b9; border: 4px solid #1f618d; border-radius: 10px; 
+            cursor: pointer; transition: 0.2s; margin: 10px; text-transform: uppercase; 
         }
         .btn:hover { background: #3498db; transform: scale(1.05); }
         .btn-danger { background: #c0392b; border-color: #922b21; }
         .btn-danger:hover { background: #e74c3c; }
         
-        /* ODPOČET TEXT */
         #countdown-text { font-size: 160px; font-weight: bold; color: #e74c3c; text-shadow: 0 0 40px rgba(231, 76, 60, 0.8); }
     </style>
 </head>
 <body id="main-body">
 
-<div class="ui-bar">
-    <div>Čas: <span id="timer">60.0</span>s</div>
-    <div>Zbývá: <span id="count">0</span></div>
-    <div id="boost-indicator"></div>
-    <div class="record">Rekord: <span id="best">--</span>s</div>
-</div>
-
-<div class="game-wrapper">
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="screen-start" class="overlay">
-        <h1>Mistr Páčidlo</h1>
-        <p>Zažeň všechny flákače k počítačům do 60 sekund!<br>Pohyb: <b>W A S D</b> nebo <b>Šipky</b></p>
-        <button class="btn" onclick="startCountdown()">Začít směnu</button>
+<div class="game-container">
+    <div class="ui-bar">
+        <div>Čas: <span id="timer">60.0</span>s</div>
+        <div>Zbývá: <span id="count">0</span></div>
+        <div id="boost-indicator"></div>
+        <div class="record">Rekord: <span id="best">--</span>s</div>
     </div>
 
-    <div id="screen-countdown" class="overlay hidden">
-        <div id="countdown-text">5</div>
-    </div>
-
-    <div id="screen-win" class="overlay hidden">
-        <h1>MANAŽER MĚSÍCE!</h1>
-        <h2>Gratulujeme!</h2>
-        <p>Všichni poctivě pracují.<br>Tvůj čas: <span id="win-time">0</span>s</p>
-        <div>
-            <button class="btn" onclick="resetGame()">Znovu do práce</button>
-            <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="1000" height="650"></canvas>
+        
+        <div id="screen-start" class="overlay">
+            <h1>Mistr Páčidlo</h1>
+            <p>Zažeň všechny flákače k počítačům do 60 sekund!<br>Pohyb: <b>W A S D</b> nebo <b>Šipky</b></p>
+            <button class="btn" onclick="startCountdown()">Začít směnu</button>
         </div>
-    </div>
 
-    <div id="screen-lose" class="overlay hidden">
-        <h1>VYHAZOV!</h1>
-        <p>Firma zkrachovala. Nestihl jsi to včas.</p>
-        <div>
-            <button class="btn" onclick="resetGame()">Zkusit znovu</button>
-            <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+        <div id="screen-countdown" class="overlay hidden">
+            <div id="countdown-text">5</div>
+        </div>
+
+        <div id="screen-win" class="overlay hidden">
+            <h1>MANAŽER MĚSÍCE!</h1>
+            <h2>Gratulujeme!</h2>
+            <p>Všichni poctivě pracují.<br>Tvůj čas: <span id="win-time">0</span>s</p>
+            <div>
+                <button class="btn" onclick="resetGame()">Znovu do práce</button>
+                <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+            </div>
+        </div>
+
+        <div id="screen-lose" class="overlay hidden">
+            <h1>VYHAZOV!</h1>
+            <p>Firma zkrachovala. Nestihl jsi to včas.</p>
+            <div>
+                <button class="btn" onclick="resetGame()">Zkusit znovu</button>
+                <button class="btn btn-danger" onclick="quitGame()">Konec směny</button>
+            </div>
         </div>
     </div>
 </div>
@@ -171,7 +155,7 @@ let timeLeft = 60, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
 
-let bestTime = localStorage.getItem('bestTimeCorporateV2') || Infinity;
+let bestTime = localStorage.getItem('bestTimeCorporateV3') || Infinity;
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
 function createWalls() {
@@ -199,7 +183,9 @@ class Coffee {
         }
     }
     draw(cx, cy) {
-        if (!this.collected) { ctx.font = "30px Arial"; ctx.fillText("☕", this.x - cx - 15, this.y - cy + 10); }
+        if (!this.collected) { 
+            ctx.fillText("☕", this.x - cx, this.y - cy); 
+        }
     }
 }
 
@@ -231,7 +217,8 @@ class Slacker {
                 this.state = 'idle';
             }
 
-            if (d < 45) { 
+            // Mírně zvětšený dosah páčidla na 55px (spolehlivější zásah)
+            if (d < 55) { 
                 this.state = 'goingToWork'; 
                 let freeDesks = desks.filter(d => !d.occupied);
                 if(freeDesks.length > 0) {
@@ -263,16 +250,18 @@ class Slacker {
 
     draw(cx, cy) {
         let sx = this.x - cx, sy = this.y - cy;
+        
         ctx.font = "32px Arial";
         let icon = "😴"; 
         if (this.state === 'running') icon = "😨"; 
         if (this.state === 'goingToWork') icon = "🏃"; 
         if (this.state === 'working') icon = "👷"; 
-        ctx.fillText(icon, sx - 16, sy + 12);
+        
+        ctx.fillText(icon, sx, sy); // Nyní perfektně vycentrováno
         
         if (this.state === 'idle' && gameState === 'playing') {
-            ctx.fillStyle = "rgba(255,255,255,0.6)"; ctx.font = "11px Arial";
-            ctx.fillText(this.msg, sx - 15, sy - 25);
+            ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "12px Arial";
+            ctx.fillText(this.msg, sx, sy - 30);
         }
     }
 }
@@ -315,7 +304,7 @@ function hideAllScreens() {
     screenCountdown.classList.add('hidden');
     screenWin.classList.add('hidden');
     screenLose.classList.add('hidden');
-    canvas.classList.remove('no-cursor'); // Zobrazit myš pro menu
+    canvas.classList.remove('no-cursor'); 
 }
 
 function resetGame() {
@@ -348,7 +337,7 @@ function startCountdown() {
 
 function startGame() {
     hideAllScreens();
-    canvas.classList.add('no-cursor'); // Skrýt myš při hraní
+    canvas.classList.add('no-cursor'); // Zmizí myš, abys mohl hrát
     gameState = 'playing';
     keys = {}; 
     
@@ -383,11 +372,10 @@ function checkWin() {
         
         if(timeTaken < bestTime) { 
             bestTime = timeTaken; 
-            localStorage.setItem('bestTimeCorporateV2', bestTime); 
+            localStorage.setItem('bestTimeCorporateV3', bestTime); 
             bestEl.innerText = bestTime; 
         }
         
-        // Zpoždění vítězné obrazovky o 2 sekundy (taneček)
         setTimeout(() => {
             hideAllScreens();
             screenWin.classList.remove('hidden');
@@ -396,7 +384,7 @@ function checkWin() {
 }
 
 function quitGame() {
-    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 50px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Můžeš zavřít okno prohlížeče.</p>";
+    document.getElementById('main-body').innerHTML = "<h1 style='color:#e74c3c; font-size: 50px; text-transform: uppercase;'>Konec směny</h1><p style='color:#ccc; font-size: 20px;'>Nyní můžeš bezpečně zavřít prohlížeč.</p>";
 }
 
 function update() {
@@ -427,6 +415,10 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, VIEW_W, VIEW_H);
     
+    // Globální nastavení pro perfektní centrování všeho textu/emoji
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
     ctx.fillStyle = "#34495e";
     walls.forEach(w => ctx.fillRect(w.x - camera.x, w.y - camera.y, w.w, w.h));
     
@@ -434,7 +426,7 @@ function draw() {
         ctx.fillStyle = "#555"; 
         ctx.fillRect(d.x - camera.x - 30, d.y - camera.y - 20, 60, 40);
         ctx.fillStyle = "white"; ctx.font = "30px Arial";
-        ctx.fillText("🖥️", d.x - camera.x - 25, d.y - camera.y + 10);
+        ctx.fillText("🖥️", d.x - camera.x, d.y - camera.y);
     });
     
     coffees.forEach(c => c.draw(camera.x, camera.y));
@@ -444,24 +436,35 @@ function draw() {
         s.draw(camera.x, camera.y);
     });
 
+    // HRÁČ (Červený kruh + Páčidlo - spolehlivé řešení!)
     let px = player.x - camera.x, py = player.y - camera.y;
     
     if (gameState === 'win') {
         danceFrame++;
         let bounce = Math.abs(Math.sin(danceFrame * 0.15)) * 15; 
-        ctx.font = "40px Arial";
-        ctx.fillText("🏆", px - 18, py - 20 - bounce); 
-        ctx.font = "42px Arial";
-        ctx.fillText("🤵", px - 22, py + 16 - bounce); 
+        
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath(); ctx.arc(px, py - bounce, player.size, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "25px Arial";
+        ctx.fillText("🏆", px + 15, py - 20 - bounce); 
     } else {
-        if(player.isBoosted && gameState === 'playing') { ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; }
-        ctx.font = "42px Arial";
-        ctx.fillText("🤵", px - 22, py + 16);
+        if(player.isBoosted && gameState === 'playing') { 
+            ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; 
+            ctx.fillStyle = "#f39c12";
+        } else {
+            ctx.fillStyle = "#e74c3c";
+        }
+        
+        // Kreslení těla hráče
+        ctx.beginPath(); ctx.arc(px, py, player.size, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
         
+        // Kreslení páčidla
         ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round";
         ctx.beginPath();
-        ctx.moveTo(px + 12, py); ctx.lineTo(px + 40, py - 24); ctx.lineTo(px + 46, py - 18);
+        ctx.moveTo(px + 5, py - 5); 
+        ctx.lineTo(px + 25, py - 25); 
+        ctx.lineTo(px + 32, py - 18);
         ctx.stroke();
     }
 
