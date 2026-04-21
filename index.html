@@ -97,7 +97,6 @@
         .btn-orange { background: #e67e22; border-color: #d35400; }
         .btn-orange:hover { background: #f39c12; }
 
-        /* Tlačítka pro obtížnost */
         .btn-diff { padding: 8px 16px; font-size: 16px; background: #444; border: 2px solid #222; opacity: 0.5; }
         .btn-diff.active { background: #e74c3c; border-color: #c0392b; opacity: 1; }
         .btn-diff-normal.active { background: #2980b9; border-color: #1f618d; opacity: 1; }
@@ -392,7 +391,21 @@ class Coffee {
 class Slacker {
     constructor() {
         this.state = 'idle';
-        this.msg = ["Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe..."][Math.floor(Math.random()*5)];
+        
+        // Rozšířené výmluvy při flákání (idle/running)
+        this.idleMsgs = [
+            "Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe...",
+            "Zrovna to renderuju.", "Aktualizujou se mi Windows.", "Ono se to seklo.", "Přemýšlím nad výsekem.",
+            "Schvaluje se to u šéfa.", "Hledám myš.", "Restartuju komp."
+        ];
+        
+        // Nové hlášky po chycení (goingToWork)
+        this.caughtMsgs = [
+            "Ale já udělal hodně!", "Ale ono to fakt nejde pracovat!", "Mám blbý den dnes...", 
+            "Jdi s tím pajcrem do prdele!", "Už jdu, už jdu!", "To je šikana!", "Vždyť už skoro klikám."
+        ];
+        
+        this.msg = this.idleMsgs[Math.floor(Math.random() * this.idleMsgs.length)];
         this.targetDesk = null;
         this.spawn();
     }
@@ -403,7 +416,8 @@ class Slacker {
             this.x = Math.random() * (WORLD_W - 200) + 100;
             this.y = Math.random() * (WORLD_H - 200) + 100;
             attempts++;
-        } while (checkWallCollision(this.x, this.y, 30) && attempts < 50);
+        // Nová podmínka: Nekolidovat se zdí a NEBÝT v okruhu 350px od hráče (1200, 900)
+        } while ((checkWallCollision(this.x, this.y, 30) || Math.hypot(this.x - 1200, this.y - 900) < 350) && attempts < 50);
     }
 
     update() {
@@ -419,8 +433,12 @@ class Slacker {
                 this.state = 'idle';
             }
 
+            // CHYCENÍ!
             if (d < 55) { 
                 this.state = 'goingToWork'; 
+                // Změna hlášky po zásahu
+                this.msg = this.caughtMsgs[Math.floor(Math.random() * this.caughtMsgs.length)];
+                
                 let freeDesks = desks.filter(d => !d.occupied);
                 if(freeDesks.length > 0) {
                     this.targetDesk = freeDesks.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y))[0];
@@ -435,6 +453,7 @@ class Slacker {
             let distToDesk = Math.hypot(targetX - this.x, targetY - this.y);
 
             if (distToDesk < 15) {
+                // DOSAŽENÍ STOLU - Začne pracovat (tím pádem už se nebudou vykreslovat hlášky)
                 this.state = 'working';
                 this.x = targetX; this.y = targetY;
             } else {
@@ -457,8 +476,19 @@ class Slacker {
         if (this.state === 'goingToWork') icon = "🏃"; 
         if (this.state === 'working') icon = "👷"; 
         ctx.fillText(icon, sx, sy); 
-        if (this.state === 'idle' && gameState === 'playing') {
-            ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.font = "12px Arial";
+        
+        // Zobrazení textů: Kreslí se VŽDY, POKUD SE NEPRACUJE
+        if (this.state !== 'working' && gameState === 'playing') {
+            if (this.state === 'goingToWork') {
+                ctx.fillStyle = "#e74c3c"; // Červená pro hysterii
+                ctx.font = "bold 13px Arial";
+            } else if (this.state === 'running') {
+                ctx.fillStyle = "#f39c12"; // Oranžová pro paniku
+                ctx.font = "bold 12px Arial";
+            } else {
+                ctx.fillStyle = "rgba(255,255,255,0.7)"; // Klídek
+                ctx.font = "12px Arial";
+            }
             ctx.fillText(this.msg, sx, sy - 35);
         }
     }
@@ -633,7 +663,7 @@ function showLeaderboard(fromScreen) {
     
     let h = "";
     scores.forEach((s, i) => {
-        let color = s.hc ? "#e74c3c" : "white"; // Červená pro hardcore
+        let color = s.hc ? "#e74c3c" : "white";
         h += `<div class="leaderboard-row"><span style="color:${color}">${i+1}. ${s.name}</span><span style="color:${color}">${s.time}s</span></div>`;
     });
     div.innerHTML = h;
@@ -668,7 +698,6 @@ function update() {
     coffees.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
             c.collected = true; player.isBoosted = true; 
-            // V normálním módu 40% zrychlení (1.4), v hardcore jen 20% (1.2)
             let boostMultiplier = isHardcore ? 1.2 : 1.4;
             player.speed = player.baseSpeed * boostMultiplier;
             boostEl.innerText = "⚡ KOFEIN!";
