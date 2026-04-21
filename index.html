@@ -90,7 +90,6 @@
         .btn-danger { background: #c0392b; border-color: #922b21; }
         .btn-danger:hover { background: #e74c3c; }
         
-        /* Barvy pro nová tlačítka */
         .btn-purple { background: #8e44ad; border-color: #732d91; }
         .btn-purple:hover { background: #9b59b6; }
         .btn-green { background: #27ae60; border-color: #1e8449; }
@@ -142,7 +141,6 @@
         }
         .device-toggle:hover { background: #444; color: white; }
 
-        /* Styly pro žebříček */
         .input-name { padding: 10px; font-size: 18px; width: 80%; max-width: 250px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; text-align: center; border-radius: 5px; }
         .leaderboard-box { background: rgba(0,0,0,0.9); border: 2px solid #f1c40f; border-radius: 10px; padding: 15px; width: 90%; max-width: 450px; margin: 15px 0; text-align: left; max-height: 300px; overflow-y: auto; }
         .leaderboard-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0; font-family: monospace; font-size: 18px; }
@@ -243,8 +241,8 @@ let keys = {};
 let timeLeft = 60, timerInterval;
 let danceFrame = 0; 
 let gameState = 'menu'; 
-let finalTimeGlobal = "0.0"; // Pro kopírování výsledku
-let returnScreen = 'screen-start'; // Pamatuje si odkud jsme leaderboard otevřeli
+let finalTimeGlobal = "0.0"; 
+let returnScreen = 'screen-start'; 
 
 let bestTime = Infinity;
 try {
@@ -347,17 +345,11 @@ function createWalls() {
 }
 
 class Coffee {
-    constructor() { this.collected = false; this.spawn(); }
-    spawn() {
-        let attempts = 0;
-        do {
-            if (Math.random() > 0.5) {
-                this.x = 1150 + Math.random() * 100; this.y = 100 + Math.random() * (WORLD_H - 200);
-            } else {
-                this.x = 100 + Math.random() * (WORLD_W - 200); this.y = 850 + Math.random() * 100;
-            }
-            attempts++;
-        } while (checkWallCollision(this.x, this.y, 30) && attempts < 50);
+    // Káva má nyní pevné souřadnice předané v konstruktoru
+    constructor(x, y) { 
+        this.x = x;
+        this.y = y;
+        this.collected = false; 
     }
     draw(cx, cy) {
         if (!this.collected) ctx.fillText("☕", this.x - cx, this.y - cy); 
@@ -462,7 +454,15 @@ function generateWorld() {
     });
 
     for(let i=0; i<20; i++) slackers.push(new Slacker());
-    for(let i=0; i<5; i++) coffees.push(new Coffee());
+    
+    // Pevné souřadnice pro kávu - přesně uprostřed hlavních chodeb!
+    const coffeeSpots = [
+        {x: 1200, y: 400},  // Horní chodba
+        {x: 1200, y: 1400}, // Spodní chodba
+        {x: 600, y: 900},   // Levá chodba
+        {x: 1800, y: 900}   // Pravá chodba
+    ];
+    coffeeSpots.forEach(spot => coffees.push(new Coffee(spot.x, spot.y)));
 
     player.x = 1200; player.y = 900;
     countEl.innerText = slackers.length;
@@ -534,10 +534,9 @@ function checkWin() {
         canvas.classList.remove('no-cursor');
         
         let timeTaken = parseFloat((60 - timeLeft).toFixed(1));
-        finalTimeGlobal = timeTaken; // Uložíme pro kopírování
+        finalTimeGlobal = timeTaken; 
         document.getElementById('win-time').innerText = timeTaken;
         
-        // Přečtení uloženého jména (pokud existuje)
         try { document.getElementById('player-name').value = localStorage.getItem('hunter_player_name') || ''; } catch(e){}
         
         if(timeTaken < bestTime) { 
@@ -565,7 +564,7 @@ function saveToLocalLeaderboard() {
     let scores = JSON.parse(localStorage.getItem('hunter_local_scores') || "[]");
     scores.push({ name: name, time: parseFloat(finalTimeGlobal) });
     scores.sort((a, b) => a.time - b.time);
-    scores = scores.slice(0, 10); // Udržet max 10
+    scores = scores.slice(0, 10); 
     
     localStorage.setItem('hunter_local_scores', JSON.stringify(scores));
     alert("Skóre uloženo do paměti tohoto zařízení!");
