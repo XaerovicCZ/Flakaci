@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Mistr Páčidlo: Korporátní pořádek</title>
+    <title>Mistr Páčidlo: Hardcore Limit</title>
     <style>
         body { margin: 0; background: #111; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         canvas { background: #2c3e50; border: 4px solid #555; cursor: none; }
@@ -34,12 +34,11 @@ const WORLD_W = 2400, WORLD_H = 1800;
 canvas.width = VIEW_W; canvas.height = VIEW_H;
 
 let slackers = [], desks = [], walls = [], coffees = [];
-// ZPOMALENÝ HRÁČ
 let player = { x: 1200, y: 900, size: 20, speed: 4.5, baseSpeed: 4.5, isBoosted: false }; 
 let camera = { x: 0, y: 0 };
 let keys = {};
 let timeLeft, timerInterval, gameActive = false;
-let bestTime = localStorage.getItem('bestTimeCorporate') || Infinity;
+let bestTime = localStorage.getItem('bestTimeHardcore') || Infinity;
 
 if(bestTime !== Infinity) bestEl.innerText = bestTime;
 
@@ -102,8 +101,8 @@ class Slacker {
             if (d < 220) {
                 this.state = 'running';
                 let angle = Math.atan2(this.y - player.y, this.x - player.x);
-                // ZPOMALENÝ ÚTĚK FLÁKAČE
-                this.move(Math.cos(angle) * 2.5, Math.sin(angle) * 2.5);
+                // MÍRNĚ ZRYCHLENÝ ÚTĚK FLÁKAČE (z 2.5 na 3.2)
+                this.move(Math.cos(angle) * 3.2, Math.sin(angle) * 3.2);
             } else {
                 this.state = 'idle';
             }
@@ -130,9 +129,9 @@ class Slacker {
                 this.y = targetY;
             } else {
                 let angle = Math.atan2(targetY - this.y, targetX - this.x);
-                // ZPOMALENÁ CESTA KE STOLU (No-clip)
-                this.x += Math.cos(angle) * 4;
-                this.y += Math.sin(angle) * 4;
+                // MÍRNĚ ZRYCHLENÁ CESTA KE STOLU (z 4 na 4.8)
+                this.x += Math.cos(angle) * 4.8;
+                this.y += Math.sin(angle) * 4.8;
             }
         }
     }
@@ -182,22 +181,28 @@ function initLevel() {
     for(let i=0; i<5; i++) coffees.push(new Coffee());
 
     player.x = 1200; player.y = 900;
-    timeLeft = 110; gameActive = true;
+    
+    // ČASOVÝ LIMIT NASTAVEN NA 60 SEKUND
+    timeLeft = 60; 
+    gameActive = true;
     countEl.innerText = slackers.length;
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => { timeLeft -= 0.1; if(timeLeft<=0) gameOver(); timerEl.innerText = Math.max(0, timeLeft).toFixed(1); }, 100);
 }
 
-function gameOver() { gameActive = false; alert("VYHAZOV! Limit vypršel."); initLevel(); }
+function gameOver() { gameActive = false; alert("VYHAZOV! Šedesát sekund je pryč a firma krachuje."); initLevel(); }
 
 function checkWin() {
     let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length;
     countEl.innerText = rem;
     if(rem === 0) {
         gameActive = false; clearInterval(timerInterval);
-        let time = parseFloat((110 - timeLeft).toFixed(1));
-        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeCorporate', bestTime); bestEl.innerText = bestTime; }
-        alert("Manažer měsíce! Všichni makají. Čas: " + time + "s");
+        
+        // VÝPOČET ČASU UPRAVEN PRO 60 SEKUNDOVÝ LIMIT
+        let time = parseFloat((60 - timeLeft).toFixed(1));
+        
+        if(time < bestTime) { bestTime = time; localStorage.setItem('bestTimeHardcore', bestTime); bestEl.innerText = bestTime; }
+        alert("Manažer měsíce! Všichni makají pod minutu. Čas: " + time + "s");
         initLevel();
     }
 }
@@ -216,7 +221,6 @@ function update() {
 
     coffees.forEach(c => {
         if(!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < 35) {
-            // ZMÍRNĚNÝ KOFEIN (násobič z 1.7 na 1.4)
             c.collected = true; player.isBoosted = true; player.speed = player.baseSpeed * 1.4;
             boostEl.innerText = "⚡ KOFEIN!";
             setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; boostEl.innerText = ""; }, 8000);
