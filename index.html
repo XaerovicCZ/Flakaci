@@ -13,8 +13,11 @@
         .level-badge { background: #e74c3c; padding: 2px 8px; border-radius: 5px; color: white; margin-right: 10px;}
         canvas { display: block; width: 100%; height: auto; background: #2c3e50; border: 4px solid #555; border-radius: 0 0 10px 10px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); box-sizing: border-box; }
         .no-cursor { cursor: none; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 100; border-radius: 0 0 10px 10px; padding: 15px; box-sizing: border-box; }
+        
+        /* OVERLAY - upraveno pro scrollování a flex-start na malých obrazovkách */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 100; border-radius: 0 0 10px 10px; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .hidden { display: none !important; }
+        
         h1 { font-size: 45px; margin-bottom: 5px; color: #e74c3c; text-shadow: 2px 2px 0 #000; text-transform: uppercase; }
         h2 { font-size: 24px; margin-bottom: 10px; color: #f1c40f; }
         .intro-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; max-width: 85%; border-left: 4px solid #f1c40f; }
@@ -29,7 +32,6 @@
         .btn-diff.active { background: #e74c3c; border-color: #c0392b; opacity: 1; }
         .btn-diff-normal.active { background: #2980b9; border-color: #1f618d; opacity: 1; }
         
-        /* LEVEL GRID STYLING */
         .level-grid { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0; max-width: 350px; }
         .lvl-btn { width: 45px; height: 45px; font-size: 18px; font-weight: bold; border-radius: 8px; border: 2px solid #555; background: #333; color: white; cursor: pointer; display:flex; align-items:center; justify-content:center; transition:0.1s;}
         .lvl-btn.unlocked { background: #2980b9; border-color: #1f618d; }
@@ -44,6 +46,23 @@
         .leaderboard-box { background: rgba(0,0,0,0.9); border: 2px solid #f1c40f; border-radius: 10px; padding: 15px; width: 90%; max-width: 450px; margin: 15px 0; text-align: left; max-height: 250px; overflow-y: auto; }
         .leaderboard-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0; font-family: monospace; font-size: 16px; }
         .input-name { padding: 10px; font-size: 18px; width: 80%; max-width: 250px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; text-align: center; border-radius: 5px; }
+
+        /* MOBILNÍ RESPONZIVITA - OPRAVA PŘEKRÝVÁNÍ */
+        @media (max-width: 650px), (max-height: 750px) {
+            .ui-bar { font-size: 13px; justify-content: center; gap: 8px; padding: 8px; flex-wrap: wrap; }
+            .level-badge { margin-right: 5px; padding: 2px 5px; font-size: 12px; }
+            h1 { font-size: 32px; margin-bottom: 5px; }
+            h2 { font-size: 18px; }
+            .intro-text { font-size: 15px; min-height: auto; margin-bottom: 8px; }
+            .intro-box { padding: 10px; margin-bottom: 10px; width: 95%; }
+            .intro-box p { font-size: 11px !important; }
+            .btn { padding: 8px 15px; font-size: 14px; margin: 3px; }
+            .lvl-btn { width: 38px; height: 38px; font-size: 16px; margin: 2px; }
+            .level-grid { max-width: 250px; margin: 5px 0; gap: 4px; }
+            
+            /* Důležité: Na mobilu zarovná menu shora a přidá min. výšku, aby se dalo scrollovat a nepřeteklo nahoru */
+            .overlay { justify-content: flex-start; padding-top: 15px; min-height: 520px; }
+        }
     </style>
 </head>
 <body id="main-body">
@@ -188,59 +207,31 @@ const intros = [
 
 const winTexts = [
     "Všichni jsou vzorně u monitorů a výseky se hýbou vpřed.", "Dneska nebudou přesčasy, konstrukce zázračně zrychlila.",
-    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.", "Dílna děkuje! Konstrukce konečně pochopila, co je práce.",
-    "Hunter s.r.o. hlásí rekordní tržby díky tvé buzeraci.", "Na dílně se oslavuje, výkresy konečně dorazily včas.",
-    "Ředitel tě navrhl na zaměstnance roku (a prémie možná budou).", "Konstruktéři mají noční můry o Pajcrmanovi, ale makají.",
-    "Splněno na 120 %! Dneska můžeš jít domů o pět minut dřív.", "Klávesnice hoří, myši se vaří, tohle je výkon!",
-    "Dokonalá kontrola. Všichni sedí rovně a neodmlouvají.", "Žádné prostoje. Tohle oddělení jsi vycvičil k dokonalosti.",
-    "Pišta na dílně brečí štěstím, že má co dělat.", "Pajcrman zachránil firmu. Zase."
+    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.", "Dílna děkuje! Konstrukce konečně pochopila, co je práce."
 ];
 
 const loseTexts = [
     "Konstrukce nestihla dnešní výrobu, bude přesčas.", "Vedení je nasrané, nebudou prémie.",
     "Konstruktéři posrali desky.", "Na dílně začala revoluce proti konstruktérům.",
     "Když nemaká Pišta, tak už ani konstrukce.", "Pajcrman jde na kobereček, konstrukce ho totálně vyškolila.",
-    "Zase se kreslí nesmysly, které nejdou vyrobit. Směna končí v slzách.", "Výroba odeslala Pajcrmana domů, konstrukce vyhrála dnešní bitvu flákání.",
-    "Odbory tě zažalovaly za bossing. Firma to zabalila.", "Polovina oddělení podala výpověď, zbytek hraje karty.",
-    "Ředitel ti sebral pajcr a poslal tě na úřad práce.", "Termíny hoří, klienti ruší objednávky. Katastrofa.",
-    "Na dílně došel materiál a mistr dostal infarkt.", "Pajcrman ztratil autoritu. Konstruktéři ti nakreslili tykadla.",
-    "Firma je v insolvenci a za všechno může tvoje pomalost.", "Už i kávovar podal výpověď. Je konec.",
-    "Všichni šli na oběd a už se nevrátili.", "Hunter s.r.o. se přejmenoval na Flákači s.r.o."
+    "Zase se kreslí nesmysly, které nejdou vyrobit. Směna končí v slzách.", "Výroba odeslala Pajcrmana domů, konstrukce vyhrála dnešní bitvu flákání."
 ];
 
 const idleMsgs = [
     "Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe...",
     "Hledám šroubek v 3D.", "Ten výsek nedává smysl.", "Pišta říkal, že to počká.", 
     "Aktualizace Windows...", "Myš mi nefunguje.", "Renderuju stínování.", "Kreslím to od oka.",
-    "Zrovna se to načítá.", "Kde je to razítko?", "Někdo mi smazal sestavu!",
-    "Simuluju zatížení...", "Vybírám barvu dílu.", "Ten monitor mě hypnotizuje.", "Tlačím to očima.",
-    "Piju už pátý kafe.", "Kde je ten výkres?", "Zrovna mi volala manželka.", "Myšlenkově jsem už doma.",
-    "Kdo mi smazal poznámky?", "Šéf tu není, tak co.", "Čekám, až to vychladne.", "Hledám inspiraci na netu.",
-    "Ono se to samo nenakreslí... nebo jo?", "Dívám se do blba.", "Snažím se najít motivaci.", 
-    "Tlačítko myši je moc těžké.", "Mám křeč v ukazováčku.", "Potřebuju pauzu na cigáro.", 
-    "Nefunguje mi klávesnice.", "Sleduju, jak padá prach.", "Tenhle stůl je nějak nakřivo.", 
-    "Přemýšlím o smyslu života.", "Louskám oříšky.", "Asi jsem smazal server.", "Zálohuju... už hodinu.", 
-    "Někdo mi sebral propisku.", "Dělám, že dělám.", "Hledám ten správný font.", 
-    "Vymýšlím omluvu na zítra.", "Konzultuju s kolegou (o fotbale)."
+    "Zrovna se to načítá.", "Kde je to razítko?", "Někdo mi smazal sestavu!"
 ];
 
 const caughtMsgs = [
     "Au! To nahlásím odborům!", "Zrovna jsem chtěl dát Save!", "Ale já udělal hodně!", 
     "Ono to fakt nejde pracovat!", "Mám blbý den dnes...", "Jdi s tím pajcrem do prdele!", 
     "Takhle motivace nefunguje!", "Už klikám, už klikám!", "To je šikana!",
-    "Už běžím k myši!", "Nech mě, já přemýšlím!", "Počkej, zrovna se načetl model!",
-    "Neee, můj rekord v minách!", "Vždyť jsem měl zrovna pauzu!", "Už zapínám CAD!", 
-    "Ty vole, ty ses tu zjevil!", "To není, jak to vypadá!", "Zrovna jsem chtěl začít!", 
-    "Jdu na to, šéfe!", "Až dopiju kafe!", "Nekřič na mě!", "Mám citlivou duši!", 
-    "To byl jen mikrospránek!", "Pajcr? Fakt?", "Dej to pryč!", "Už klikám jako divej!", 
-    "Nech mě žít!", "Práce šlechtí, ale...", "Jdu tvořit hodnoty!", "Tvoje metody jsou středověké!", 
-    "Volám HR!", "Jsem ve stresu!", "To je na žalobu!", "Ruce vzhůru, jdu k PC!", 
-    "Zase ta buzerace!", "Dneska už jsem jednu čáru udělal!", "Nejsem robot!", 
-    "Mám právo na odpočinek!", "Tohle je toxický pracoviště!", "Zabils mi kreativitu!", 
-    "Už píšu výpověď!", "Dobře, dobře, makám!"
+    "Už běžím k myši!", "Nech mě, já přemýšlím!", "Počkej, zrovna se načetl model!"
 ];
 
-// --- OBTÍŽNOST A LEVEL SELECT ---
+// --- OBTÍŽNOST ---
 let isHardcore = false, bestTimeNormal = Infinity, bestTimeHardcore = Infinity;
 try {
     let sN = localStorage.getItem('bestTimeHunterNormalCamp'); if(sN) bestTimeNormal = parseFloat(sN);
