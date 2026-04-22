@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pajcrman: Hunter s.r.o. - Story Edition</title>
+    <title>Pajcrman: Kampaň Hunter s.r.o.</title>
     <style>
         body { margin: 0; padding: 10px; background: #111; color: white; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; align-items: center; }
         .game-container { position: relative; width: 1000px; max-width: 100%; margin: 0 auto; box-sizing: border-box; touch-action: none; }
         .ui-bar { background: #222; padding: 10px 15px; font-size: 18px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; border: 4px solid #555; border-bottom: none; border-radius: 10px 10px 0 0; box-sizing: border-box; flex-wrap: wrap; }
         .record { color: #ffd700; }
         #boost-indicator { color: #f39c12; min-width: 100px; text-align: center; }
+        .level-badge { background: #e74c3c; padding: 2px 8px; border-radius: 5px; color: white; margin-right: 10px;}
         canvas { display: block; width: 100%; height: auto; background: #2c3e50; border: 4px solid #555; border-radius: 0 0 10px 10px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); box-sizing: border-box; }
         .no-cursor { cursor: none; }
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 100; border-radius: 0 0 10px 10px; padding: 20px; box-sizing: border-box; }
@@ -40,10 +41,13 @@
 
 <div class="game-container" id="game-wrapper">
     <div class="ui-bar">
-        <div>Čas: <span id="timer">60.0</span>s</div>
-        <div>Konstruktéři: <span id="count">0</span></div>
+        <div style="display:flex; align-items:center;">
+            <span class="level-badge" id="level-display">Patro: 1/10</span>
+            <span>Čas: <span id="timer">60.0</span>s</span>
+        </div>
+        <div>Flákači: <span id="count">0</span></div>
         <div id="boost-indicator"></div>
-        <div class="record">Můj TOP <span id="mode-label"></span>: <span id="best">--</span>s</div>
+        <div class="record">TOP <span id="mode-label"></span>: <span id="best">--</span>s</div>
     </div>
 
     <div style="position: relative;">
@@ -51,57 +55,65 @@
         <div class="joystick-area" id="joystick-area"><div class="joystick-stick" id="joystick-stick"></div></div>
 
         <div id="screen-start" class="overlay">
-            <h1>PAJCRMAN</h1>
+            <h1>PAJCRMAN: KAMPAŇ</h1>
             <div id="dynamic-intro" class="intro-text"></div>
             
             <div class="intro-box">
-                <p style="margin:0; font-size:14px; color: #ccc;">
-                    ☕ <b>Kafe na zemi:</b> Tvůj boost.<br>
-                    ☕ <b>Kafaři:</b> Pár lidí má kafe v ruce, utíkají o dost rychleji!<br>
+                <p style="margin:0; font-size:13px; color: #ccc;">
+                    📈 <b>Postup:</b> 10 pater. Víc konstruktérů, víc překážek, víc času.<br>
+                    ☕ <b>Kafaři:</b> Utíkají o dost rychleji! V každém patře jich je víc.<br>
                     😴 <b>Zamrzlíci:</b> Šance, že někdo spí vestoje a neuteče.
                 </p>
                 <p id="hc-info" style="margin:5px 0 0 0; font-size:14px; color: #e74c3c; font-weight: bold; display:none;">
-                    ⚠️ HARDCORE: Čas jen 30s a tvoje káva účinkuje o dost méně!
+                    ⚠️ HARDCORE: Poloviční čas a slabší kafe!
                 </p>
             </div>
 
             <div style="margin-bottom: 15px;">
-                <button id="btn-normal" class="btn btn-diff btn-diff-normal active" onclick="setDifficulty(false)">Normální (60s)</button>
-                <button id="btn-hardcore" class="btn btn-diff" onclick="setDifficulty(true)">Hardcore 💀 (30s)</button>
+                <button id="btn-normal" class="btn btn-diff btn-diff-normal active" onclick="setDifficulty(false)">Normální</button>
+                <button id="btn-hardcore" class="btn btn-diff" onclick="setDifficulty(true)">Hardcore 💀</button>
             </div>
             
-            <button class="btn" onclick="startCountdown()">Vlítnout na ně</button>
+            <button class="btn" onclick="startCountdown()">Zahájit obchůzku</button>
             <button class="btn btn-purple" onclick="showLeaderboard('screen-start')">🏆 Síň slávy</button>
             <br><button class="btn btn-danger" onclick="resetScores()" style="font-size: 12px; padding: 6px 12px; margin-top: 10px; opacity: 0.7;">🗑️ Vymazat historii</button>
         </div>
 
         <div id="screen-countdown" class="overlay hidden"><div id="countdown-text">5</div></div>
 
+        <div id="screen-level-up" class="overlay hidden">
+            <h1 style="color:#f1c40f;">PATRO VYČIŠTĚNO</h1>
+            <h2 id="level-p-extra">Všichni už tu makají.</h2>
+            <p>Tvůj celkový čas kampaně: <span id="level-total-time" style="color:#e74c3c; font-weight:bold; font-size:20px;">0</span>s</p>
+            <button class="btn btn-green" onclick="nextLevel()">Vytáhnout výtah do dalšího patra</button>
+        </div>
+
         <div id="screen-win" class="overlay hidden">
             <h1>PAJCRMAN ROKU!</h1>
-            <h2 id="win-heading">Na konstrukci je klid.</h2>
-            <p id="win-p-extra"></p>
-            <p>Tvůj čas: <span id="win-time">0</span>s <span id="win-mode" style="color:#e74c3c;"></span></p>
+            <h2 id="win-heading">Došel jsi až na ředitelství.</h2>
+            <p id="win-p-extra">Celá budova Hunteru šlape jako hodinky. Tohle je historický moment!</p>
+            <p>Celkový čas: <span id="win-time" style="font-size:24px; font-weight:bold; color:#ffd700;">0</span>s <span id="win-mode" style="color:#e74c3c;"></span></p>
             
             <div style="margin: 10px 0;">
                 <input type="text" id="player-name" class="input-name" placeholder="Tvé jméno" maxlength="15"><br>
-                <button class="btn btn-green" onclick="saveToLocalLeaderboard()">Uložit skóre</button>
+                <button class="btn btn-green" onclick="saveToLocalLeaderboard()">Uložit rekord</button>
                 <button class="btn btn-orange" onclick="copyResultToClipboard()">Kopírovat do chatu</button>
             </div>
-            <div><button class="btn" onclick="resetGame()">Další obchůzka</button></div>
+            <div><button class="btn" onclick="resetGameToMenu()">Zkusit novou kampaň</button></div>
         </div>
 
         <div id="screen-lose" class="overlay hidden">
             <h1>DOHRA V HUNTERU</h1>
             <p id="lose-p-extra" style="font-style: italic; font-weight: bold; color: #e74c3c; font-size: 22px; max-width: 80%; line-height: 1.5;"></p>
+            <p>Přežil jsi do patra: <span id="lose-level" style="font-weight:bold; color:#f1c40f; font-size:20px;">1</span>/10</p>
             <div>
-                <button class="btn" onclick="resetGame()">Zkusit znovu</button>
+                <button class="btn" onclick="resetGameToMenu()">Zkusit kampaň znovu</button>
                 <button class="btn btn-purple" onclick="showLeaderboard('screen-lose')">🏆 Síň slávy</button>
             </div>
         </div>
 
         <div id="screen-leaderboard" class="overlay hidden">
-            <h2>Síň slávy Hunteru</h2>
+            <h2>Síň slávy Hunteru (Kampaň)</h2>
             <div id="leaderboard-content" class="leaderboard-box"></div>
             <button class="btn" onclick="closeLeaderboard()">Zpět</button>
         </div>
@@ -111,48 +123,41 @@
 <button class="device-toggle" id="deviceToggleBtn" onclick="toggleTouchMode()">🎮 Přepnout na Dotykové ovládání</button>
 
 <script>
-// 1. ZÁKLADNÍ NASTAVENÍ
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// --- ZÁKLAD ---
+const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
 const timerEl = document.getElementById('timer'), countEl = document.getElementById('count'), bestEl = document.getElementById('best');
 const boostEl = document.getElementById('boost-indicator'), modeLabelEl = document.getElementById('mode-label');
+const screenStart = document.getElementById('screen-start'), screenCountdown = document.getElementById('screen-countdown');
+const screenWin = document.getElementById('screen-win'), screenLose = document.getElementById('screen-lose'), countdownText = document.getElementById('countdown-text');
+
 const VIEW_W = 1000, VIEW_H = 650, WORLD_W = 2400, WORLD_H = 1800;
+let slackers = [], desks = [], walls = [], coffees = [], player = { x: 1200, y: 900, size: 20, speed: 4.8, baseSpeed: 4.8, isBoosted: false }; 
+let camera = { x: 0, y: 0 }, keys = {}, timeLeft, timerInterval, danceFrame = 0, gameState = 'menu', finalTimeGlobal = "0.0", returnScreen = 'screen-start';
 
-let slackers = [], desks = [], walls = [], coffees = [];
-let player = { x: 1200, y: 900, size: 20, speed: 4.8, baseSpeed: 4.8, isBoosted: false }; 
-let camera = { x: 0, y: 0 }, keys = {}, timeLeft, timerInterval, danceFrame = 0;
-let gameState = 'menu', finalTimeGlobal = "0.0", returnScreen = 'screen-start';
+// --- KAMPAŇ PROMĚNNÉ ---
+let currentLevel = 1;
+const MAX_LEVEL = 10;
+let totalCampaignTime = 0.0;
 
-// 2. TEXTOVÉ HLÁŠKY
+// --- VŠECHNY TEXTY ---
 const intros = [
-    "Máme konstruktéry, které musím donutit začít makat!",
-    "Výroba stojí, konstrukce spí. Je čas na Pajcrmana!",
-    "Dílna už brousí nože, Pajcrmane, hni s tou konstrukcí!",
-    "AutoCAD se zasekl a s ním i celé oddělení. Jdu tam!",
-    "V kuchyňce je podezřele plno. Vyrážím do akce!",
-    "Někdo prej řekl, že 'víc už to nejde'. Uvidíme...",
-    "Konstrukce si myslí, že je pátek. Ale je úterý 8 ráno!",
-    "Pišta už je u stroje, ale výkresy nikde. Hni se!",
-    "Dneska to vypadá na rekord v koukání do blba.",
-    "Zase ty stejný výmluvy. Čas na trochu motivace pajcrem!"
+    "Máme konstruktéry, které musím donutit makat!", "Výroba stojí, konstrukce spí. Je čas na Pajcrmana!",
+    "Dílna už brousí nože, Pajcrmane, hni s tou konstrukcí!", "AutoCAD se zasekl a s ním i celé oddělení. Jdu tam!",
+    "V kuchyňce je podezřele plno. Vyrážím do akce!", "Někdo prej řekl, že 'víc už to nejde'. Uvidíme...",
+    "Konstrukce si myslí, že je pátek. Ale je úterý 8 ráno!", "Pišta už je u stroje, ale výkresy nikde. Hni se!",
+    "Dneska to vypadá na rekord v koukání do blba.", "Zase ty stejný výmluvy. Čas na trochu motivace pajcrem!"
 ];
 
 const winTexts = [
-    "Všichni jsou vzorně u monitorů a výseky se hýbou vpřed.",
-    "Dneska nebudou přesčasy, konstrukce zázračně zrychlila.",
-    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.",
-    "Dílna děkuje! Konstrukce konečně pochopila, co je práce."
+    "Všichni jsou vzorně u monitorů a výseky se hýbou vpřed.", "Dneska nebudou přesčasy, konstrukce zázračně zrychlila.",
+    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.", "Dílna děkuje! Konstrukce konečně pochopila, co je práce."
 ];
 
 const loseTexts = [
-    "Konstrukce nestihla dnešní výrobu, bude přesčas.",
-    "Vedení je nasrané, nebudou prémie.",
-    "Konstruktéři posrali desky.",
-    "Na dílně začala revoluce proti konstruktérům.",
-    "Když nemaká Pišta, tak už ani konstrukce.",
-    "Pajcrman jde na kobereček, konstrukce ho vyškolila.",
-    "Kreslí se nesmysly, co nejdou vyrobit. Směna končí v slzách.",
-    "Výroba odeslala Pajcrmana domů, konstrukce vyhrála flákání."
+    "Konstrukce nestihla dnešní výrobu, bude přesčas.", "Vedení je nasrané, nebudou prémie.",
+    "Konstruktéři posrali desky.", "Na dílně začala revoluce proti konstruktérům.",
+    "Když nemaká Pišta, tak už ani konstrukce.", "Pajcrman jde na kobereček, konstrukce ho vyškolila.",
+    "Kreslí se nesmysly, co nejdou vyrobit. Směna končí v slzách.", "Výroba odeslala Pajcrmana domů, konstrukce vyhrála flákání."
 ];
 
 const idleMsgs = [
@@ -169,232 +174,145 @@ const caughtMsgs = [
     "Už běžím k myši!", "Nech mě, já přemýšlím!", "Počkej, zrovna se načetl model!"
 ];
 
-// 3. OBTÍŽNOST A ULOŽENÍ
+// --- OBTÍŽNOST A ULOŽENÍ ---
 let isHardcore = false, bestTimeNormal = Infinity, bestTimeHardcore = Infinity;
 try {
-    let sN = localStorage.getItem('bestTimeHunterNormal'); if(sN) bestTimeNormal = parseFloat(sN);
-    let sH = localStorage.getItem('bestTimeHunterHardcore'); if(sH) bestTimeHardcore = parseFloat(sH);
+    let sN = localStorage.getItem('bestTimeHunterNormalC'); if(sN) bestTimeNormal = parseFloat(sN);
+    let sH = localStorage.getItem('bestTimeHunterHardcoreC'); if(sH) bestTimeHardcore = parseFloat(sH);
 } catch (e) {}
 
 function updateBestUI() {
-    const ml = document.getElementById('mode-label');
-    const be = document.getElementById('best');
-    const hcInfo = document.getElementById('hc-info');
-    
-    if (isHardcore) { 
-        ml.innerText = "(HC)"; ml.style.color = "#e74c3c"; 
-        be.innerText = bestTimeHardcore !== Infinity ? bestTimeHardcore : "--"; 
-        hcInfo.style.display = 'block';
-    } else { 
-        ml.innerText = ""; 
-        be.innerText = bestTimeNormal !== Infinity ? bestTimeNormal : "--"; 
-        hcInfo.style.display = 'none';
-    }
+    if (isHardcore) { modeLabelEl.innerText = "(HC)"; modeLabelEl.style.color = "#e74c3c"; bestEl.innerText = bestTimeHardcore !== Infinity ? bestTimeHardcore : "--"; document.getElementById('hc-info').style.display = 'block'; } 
+    else { modeLabelEl.innerText = ""; bestEl.innerText = bestTimeNormal !== Infinity ? bestTimeNormal : "--"; document.getElementById('hc-info').style.display = 'none'; }
 }
+function setDifficulty(hardcore) { isHardcore = hardcore; document.getElementById('btn-normal').classList.toggle('active', !hardcore); document.getElementById('btn-hardcore').classList.toggle('active', hardcore); updateBestUI(); }
+function resetScores() { if (confirm("Opravdu vymazat rekordy?")) { localStorage.removeItem('bestTimeHunterNormalC'); localStorage.removeItem('bestTimeHunterHardcoreC'); localStorage.removeItem('hunter_local_scores_camp'); location.reload(); } }
 
-function setDifficulty(hc) {
-    isHardcore = hc;
-    document.getElementById('btn-normal').classList.toggle('active', !hc);
-    document.getElementById('btn-hardcore').classList.toggle('active', hc);
-    updateBestUI();
-}
-
-function resetScores() {
-    if (confirm("Opravdu vymazat všechny místní rekordy a Síň slávy? (Tuto akci nelze vzít zpět)")) {
-        localStorage.removeItem('bestTimeHunterNormal');
-        localStorage.removeItem('bestTimeHunterHardcore');
-        localStorage.removeItem('hunter_local_scores_v2');
-        bestTimeNormal = Infinity; bestTimeHardcore = Infinity;
-        updateBestUI(); alert("Smazáno!");
-    }
-}
-
-// 4. OVLÁDÁNÍ
+// --- OVLÁDÁNÍ ---
 window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 let isTouchMode = false, joystickActive = false, joyX = 0, joyY = 0;
 if (/Android|webOS|iPhone|iPad/i.test(navigator.userAgent)) setTouchMode(true);
 function toggleTouchMode() { setTouchMode(!isTouchMode); }
-function setTouchMode(state) {
-    isTouchMode = state;
-    document.getElementById('game-wrapper').classList.toggle('touch-mode', state);
-    document.getElementById('deviceToggleBtn').innerText = state ? "⌨️ Klávesnice" : "📱 Dotyk";
-}
+function setTouchMode(state) { isTouchMode = state; document.getElementById('game-wrapper').classList.toggle('touch-mode', state); document.getElementById('deviceToggleBtn').innerText = state ? "⌨️ Klávesnice" : "📱 Dotyk"; }
 
 const jArea = document.getElementById('joystick-area'), jStick = document.getElementById('joystick-stick');
 let jCenterX, jCenterY;
-jArea.addEventListener('touchstart', e => { 
-    joystickActive = true; let r = jArea.getBoundingClientRect(); 
-    jCenterX = r.left + r.width/2; jCenterY = r.top + r.height/2; 
-}, {passive: false});
+jArea.addEventListener('touchstart', e => { joystickActive = true; let r = jArea.getBoundingClientRect(); jCenterX = r.left + r.width/2; jCenterY = r.top + r.height/2; }, {passive: false});
+window.addEventListener('touchmove', e => { if (!joystickActive) return; e.preventDefault(); let t = e.touches[0], dx = t.clientX - jCenterX, dy = t.clientY - jCenterY, dist = Math.hypot(dx, dy); if (dist > 40) { dx = (dx/dist)*40; dy = (dy/dist)*40; } joyX = dx/40; joyY = dy/40; jStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }, {passive: false});
+window.addEventListener('touchend', () => { joystickActive = false; joyX = 0; joyY = 0; jStick.style.transform = `translate(-50%, -50%)`; });
 
-window.addEventListener('touchmove', e => { 
-    if (!joystickActive) return; e.preventDefault(); 
-    let t = e.touches[0], dx = t.clientX - jCenterX, dy = t.clientY - jCenterY, dist = Math.hypot(dx, dy); 
-    if (dist > 40) { dx = (dx/dist)*40; dy = (dy/dist)*40; } 
-    joyX = dx/40; joyY = dy/40; 
-    jStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; 
-}, {passive: false});
-
-window.addEventListener('touchend', () => { 
-    joystickActive = false; joyX = 0; joyY = 0; 
-    jStick.style.transform = `translate(-50%, -50%)`; 
-});
-
-// 5. HERNÍ TŘÍDY A LOGIKA
-function createWalls() {
-    walls = [
-        {x: 0, y: 0, w: WORLD_W, h: 50}, {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, 
-        {x: 0, y: 0, w: 50, h: WORLD_H}, {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, 
-        {x: 50, y: 800, w: 400, h: 40}, {x: 650, y: 800, w: 450, h: 40}, 
-        {x: 1100, y: 50, w: 40, h: 300}, {x: 1100, y: 550, w: 40, h: 250}, 
-        {x: 1300, y: 800, w: 450, h: 40}, {x: 1950, y: 800, w: 400, h: 40}, 
-        {x: 1300, y: 50, w: 40, h: 300}, {x: 1300, y: 550, w: 40, h: 250}, 
-        {x: 50, y: 1000, w: 400, h: 40}, {x: 650, y: 1000, w: 450, h: 40}, 
-        {x: 1100, y: 1040, w: 40, h: 260}, {x: 1100, y: 1500, w: 40, h: 250}, 
-        {x: 1300, y: 1000, w: 450, h: 40}, {x: 1950, y: 1000, w: 400, h: 40}, 
-        {x: 1300, y: 1040, w: 40, h: 260}, {x: 1300, y: 1500, w: 40, h: 250}
-    ];
+// --- TŘÍDY A LOGIKA ---
+function createWalls() { 
+    walls = [{x: 0, y: 0, w: WORLD_W, h: 50}, {x: 0, y: WORLD_H-50, w: WORLD_W, h: 50}, {x: 0, y: 0, w: 50, h: WORLD_H}, {x: WORLD_W-50, y: 0, w: 50, h: WORLD_H}, {x: 50, y: 800, w: 400, h: 40}, {x: 650, y: 800, w: 450, h: 40}, {x: 1100, y: 50, w: 40, h: 300}, {x: 1100, y: 550, w: 40, h: 250}, {x: 1300, y: 800, w: 450, h: 40}, {x: 1950, y: 800, w: 400, h: 40}, {x: 1300, y: 50, w: 40, h: 300}, {x: 1300, y: 550, w: 40, h: 250}, {x: 50, y: 1000, w: 400, h: 40}, {x: 650, y: 1000, w: 450, h: 40}, {x: 1100, y: 1040, w: 40, h: 260}, {x: 1100, y: 1500, w: 40, h: 250}, {x: 1300, y: 1000, w: 450, h: 40}, {x: 1950, y: 1000, w: 400, h: 40}, {x: 1300, y: 1040, w: 40, h: 260}, {x: 1300, y: 1500, w: 40, h: 250}]; 
+    let extra = currentLevel * 2;
+    for(let i=0; i<extra; i++) {
+        let w = Math.random() > 0.5 ? 200 : 40; let h = w === 200 ? 40 : 200;
+        let x = 150 + Math.random() * (WORLD_W - 300); let y = 150 + Math.random() * (WORLD_H - 300);
+        walls.push({x, y, w, h});
+    }
 }
-
 class Coffee { constructor(x, y) { this.x = x; this.y = y; this.collected = false; } draw(cx, cy) { if (!this.collected) ctx.fillText("☕", this.x - cx, this.y - cy); } }
 
 class Slacker {
     constructor() {
         this.state = 'idle';
         this.msg = idleMsgs[Math.floor(Math.random() * idleMsgs.length)];
-        
+        let speedyChance = Math.min(0.8, 0.3 + (currentLevel * 0.05));
+        let frozenChance = Math.min(0.4, 0.1 + (currentLevel * 0.03));
         let rng = Math.random();
-        this.isSpeedy = rng < 0.30; 
-        this.isFrozen = !this.isSpeedy && Math.random() < 0.14; 
+        this.isSpeedy = rng < speedyChance; 
+        this.isFrozen = !this.isSpeedy && Math.random() < frozenChance; 
         this.speedMult = this.isSpeedy ? 1.45 : 1.0;
-        
         this.wanderAngle = Math.random() * Math.PI * 2;
         this.workingTimer = 0;
-        this.targetDesk = null;
         this.spawn();
     }
-    
-    spawn() { 
-        let attempts = 0;
-        do { 
-            this.x = Math.random() * (WORLD_W - 200) + 100; 
-            this.y = Math.random() * (WORLD_H - 200) + 100; 
-            attempts++;
-        } while ((checkWallCollision(this.x, this.y, 30) || Math.hypot(this.x - 1200, this.y - 900) < 400) && attempts < 100); 
-    }
-    
+    spawn() { do { this.x = Math.random() * (WORLD_W - 200) + 100; this.y = Math.random() * (WORLD_H - 200) + 100; } while ((walls.some(w => this.x + 30 > w.x && this.x - 30 < w.x + w.w && this.y + 30 > w.y && this.y - 30 < w.y + w.h) || Math.hypot(this.x - 1200, this.y - 900) < 400)); }
     update() {
-        if (this.state === 'working') { 
-            if (this.workingTimer > 0) {
-                this.workingTimer -= 0.016; 
-            }
-            return; 
-        }
+        if (this.state === 'working') { if (this.workingTimer > 0) this.workingTimer -= 0.016; return; }
         if (gameState !== 'playing') return;
-        
         let d = Math.hypot(player.x - this.x, player.y - this.y);
-        
         if (this.state === 'idle' || this.state === 'running') {
             if (d < 220 && !this.isFrozen) {
                 this.state = 'running';
                 let a = Math.atan2(this.y - player.y, this.x - player.x);
-                let dx = Math.cos(a) * 3.2 * this.speedMult;
-                let dy = Math.sin(a) * 3.2 * this.speedMult;
-                
-                // ÚNIK KOLEM ZDI
+                let dx = Math.cos(a) * 3.2 * this.speedMult, dy = Math.sin(a) * 3.2 * this.speedMult;
                 if (!this.move(dx, dy)) { 
                     let escapeA = a + (Math.random() > 0.5 ? Math.PI/2 : -Math.PI/2);
                     this.move(Math.cos(escapeA) * 3.2, Math.sin(escapeA) * 3.2);
                 }
             } else {
                 this.state = 'idle';
-                // SLABÉ CHOZENÍ
-                if (!this.isFrozen) {
-                    if (Math.random() < 0.02) this.wanderAngle += (Math.random() - 0.5);
-                    this.move(Math.cos(this.wanderAngle) * 0.5, Math.sin(this.wanderAngle) * 0.5);
-                }
+                if (!this.isFrozen && Math.random() < 0.02) this.wanderAngle += (Math.random() - 0.5);
+                if (!this.isFrozen) this.move(Math.cos(this.wanderAngle) * 0.5, Math.sin(this.wanderAngle) * 0.5);
             }
-            
-            // CHYCENÍ
             if (d < 55) { 
-                this.state = 'goingToWork'; 
-                this.msg = caughtMsgs[Math.floor(Math.random() * caughtMsgs.length)];
-                let free = desks.filter(d => !d.occupied); 
-                if(free.length > 0) { 
-                    this.targetDesk = free.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y))[0]; 
-                    this.targetDesk.occupied = true; 
-                } 
-                checkWin(); 
+                this.state = 'goingToWork'; this.msg = caughtMsgs[Math.floor(Math.random() * caughtMsgs.length)];
+                let free = desks.filter(d => !d.occupied); if(free.length > 0) { this.targetDesk = free.sort((a,b) => Math.hypot(a.x-this.x, a.y-this.y) - Math.hypot(b.x-this.x, b.y-this.y))[0]; this.targetDesk.occupied = true; } checkWin(); 
             }
         }
-        
         if (this.state === 'goingToWork' && this.targetDesk) {
             let tx = this.targetDesk.x + 15, ty = this.targetDesk.y, dist = Math.hypot(tx - this.x, ty - this.y);
-            if (dist < 15) { 
-                this.state = 'working'; this.x = tx; this.y = ty; 
-                this.workingTimer = 5.0; // 5 sekund u stolu ukazuje text
-            } else { 
-                let a = Math.atan2(ty - this.y, tx - this.x); 
-                this.x += Math.cos(a) * 2.0 * this.speedMult; 
-                this.y += Math.sin(a) * 2.0 * this.speedMult; 
-            }
+            if (dist < 15) { this.state = 'working'; this.x = tx; this.y = ty; this.workingTimer = 5; } 
+            else { let a = Math.atan2(ty - this.y, tx - this.x); this.x += Math.cos(a) * 2.5 * this.speedMult; this.y += Math.sin(a) * 2.5 * this.speedMult; }
         }
     }
-    
     move(dx, dy) {
-        let canX = !checkWallCollision(this.x + dx, this.y, 15);
-        let canY = !checkWallCollision(this.x, this.y + dy, 15);
-        if (canX) this.x += dx; 
-        if (canY) this.y += dy;
+        let canX = !walls.some(w => this.x + dx + 15 > w.x && this.x + dx - 15 < w.x + w.w && this.y + 15 > w.y && this.y - 15 < w.y + w.h);
+        let canY = !walls.some(w => this.x + 15 > w.x && this.x - 15 < w.x + w.w && this.y + dy + 15 > w.y && this.y + dy - 15 < w.y + w.h);
+        if (canX) this.x += dx; if (canY) this.y += dy;
         return canX || canY;
     }
-    
     draw(cx, cy) {
         let sx = this.x - cx, sy = this.y - cy;
-        ctx.font = "32px Arial"; 
-        // Zamrzlíci (isFrozen) mají spící ikonku "😴" stejně jako běžní.
-        let icon = this.state === 'running' ? "😨" : (this.state === 'goingToWork' ? "🏃" : (this.state === 'working' ? "👷" : "😴"));
+        ctx.font = "32px Arial"; let icon = this.isFrozen ? "😴" : (this.state === 'running' ? "😨" : (this.state === 'goingToWork' ? "🏃" : (this.state === 'working' ? "👷" : "😴")));
         ctx.fillText(icon, sx, sy);
-        
         if (this.isSpeedy && this.state !== 'working') { ctx.font = "14px Arial"; ctx.fillText("☕", sx + 18, sy + 5); }
-        
         if (gameState === 'playing' && (this.state !== 'working' || this.workingTimer > 0)) {
-            ctx.fillStyle = (this.state === 'goingToWork' || this.state === 'working') ? "#e74c3c" : (this.state === 'running' ? "#f39c12" : "rgba(255,255,255,0.7)");
+            ctx.fillStyle = this.state === 'goingToWork' || this.state === 'working' ? "#e74c3c" : (this.state === 'running' ? "#f39c12" : "rgba(255,255,255,0.7)");
             ctx.font = (this.state === 'goingToWork' || this.state === 'working' ? "bold " : "") + "12px Arial";
             ctx.fillText(this.msg, sx, sy - 35);
         }
     }
 }
 
-function checkWallCollision(x, y, size) {
-    return walls.some(w => x + size > w.x && x - size < w.x + w.w && y + size > w.y && y - size < w.y + w.h);
-}
-
 function generateWorld() {
     createWalls(); desks = []; slackers = []; coffees = []; 
-    document.getElementById('dynamic-intro').innerText = intros[Math.floor(Math.random()*intros.length)];
+    if(currentLevel === 1) document.getElementById('dynamic-intro').innerText = intros[Math.floor(Math.random()*intros.length)];
+    document.getElementById('level-display').innerText = `Patro: ${currentLevel}/10`;
+
+    for(let px = 150; px < WORLD_W - 150; px += 110) {
+        for(let py = 150; py < WORLD_H - 150; py += 110) {
+            if(!walls.some(w => px+40 > w.x && px-40 < w.x+w.w && py+40 > w.y && py-40 < w.y+w.h)) desks.push({ x: px, y: py, occupied: false });
+        }
+    }
+    desks.sort(() => Math.random() - 0.5); 
     
-    const centers = [{cx: 575, cy: 425}, {cx: 1825, cy: 425}, {cx: 575, cy: 1375}, {cx: 1825, cy: 1375}];
-    centers.forEach(rc => { for(let r = -1; r <= 1; r++) { for(let c = -1.5; c <= 1.5; c += 1) { desks.push({ x: rc.cx + c * 200, y: rc.cy + r * 160, occupied: false }); } } });
-    
-    for(let i=0; i<20; i++) slackers.push(new Slacker());
+    let numSlackers = 20 + (currentLevel - 1) * 10;
+    for(let i=0; i<numSlackers; i++) slackers.push(new Slacker());
     
     const spots = [{x: 1200, y: 400}, {x: 1200, y: 1400}, {x: 600, y: 900}, {x: 1800, y: 900}];
     spots.forEach(spot => coffees.push(new Coffee(spot.x, spot.y)));
     
-    player.x = 1200; player.y = 900; 
-    document.getElementById('count').innerText = slackers.length; 
-    timeLeft = isHardcore ? 30 : 60; 
-    document.getElementById('timer').innerText = timeLeft.toFixed(1);
-    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2)); 
-    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
+    player.x = 1200; player.y = 900; countEl.innerText = slackers.length; 
+    let base = isHardcore ? 30 : 60;
+    timeLeft = base + (currentLevel - 1) * 30; 
+    timerEl.innerText = timeLeft.toFixed(1);
+    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2)); camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
 }
 
-// --- BĚH HRY ---
+// --- SYSTÉM HRY ---
+function hideAllScreens() { 
+    screenStart.classList.add('hidden'); screenCountdown.classList.add('hidden'); screenWin.classList.add('hidden'); 
+    screenLose.classList.add('hidden'); document.getElementById('screen-leaderboard').classList.add('hidden');
+    document.getElementById('screen-level-up').classList.add('hidden');
+    canvas.classList.remove('no-cursor'); 
+}
+
 function startCountdown() { 
-    document.getElementById('screen-start').classList.add('hidden'); 
+    hideAllScreens();
     document.getElementById('screen-countdown').classList.remove('hidden'); 
     let c = 5; document.getElementById('countdown-text').innerText = c; 
     let ci = setInterval(() => { 
@@ -406,136 +324,103 @@ function startCountdown() {
 }
 
 function startGame() { 
-    document.getElementById('screen-countdown').classList.add('hidden'); 
+    hideAllScreens();
     if(!isTouchMode) canvas.classList.add('no-cursor'); 
-    gameState = 'playing'; 
-    timeLeft = isHardcore ? 30 : 60; 
-    keys = {};
+    gameState = 'playing'; keys = {};
     if(timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => { 
         if(gameState !== 'playing') return;
         timeLeft -= 0.1; 
         if(timeLeft <= 0) { timeLeft = 0; triggerLose(); } 
-        document.getElementById('timer').innerText = Math.max(0, timeLeft).toFixed(1); 
+        timerEl.innerText = Math.max(0, timeLeft).toFixed(1); 
     }, 100); 
 }
 
 function triggerLose() { 
     gameState = 'lose'; clearInterval(timerInterval); canvas.classList.remove('no-cursor'); 
     document.getElementById('lose-p-extra').innerText = loseTexts[Math.floor(Math.random()*loseTexts.length)]; 
+    document.getElementById('lose-level').innerText = currentLevel;
     setTimeout(() => { document.getElementById('screen-lose').classList.remove('hidden'); }, 1500); 
 }
 
 function checkWin() {
-    let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length; 
-    document.getElementById('count').innerText = rem;
+    let rem = slackers.filter(s => s.state === 'idle' || s.state === 'running').length; countEl.innerText = rem;
     if(rem === 0) {
-        gameState = 'win'; clearInterval(timerInterval); canvas.classList.remove('no-cursor');
-        document.getElementById('win-p-extra').innerText = winTexts[Math.floor(Math.random()*winTexts.length)];
-        let limit = isHardcore ? 30 : 60, tt = parseFloat((limit - timeLeft).toFixed(1)); finalTimeGlobal = tt;
-        document.getElementById('win-time').innerText = tt; 
-        document.getElementById('win-mode').innerText = isHardcore ? " [HARDCORE]" : "";
-        try { document.getElementById('player-name').value = localStorage.getItem('hunter_player_name') || ''; } catch(e){}
+        clearInterval(timerInterval); canvas.classList.remove('no-cursor');
         
-        if (isHardcore) { if (tt < bestTimeHardcore) { bestTimeHardcore = tt; localStorage.setItem('bestTimeHunterHardcore', tt); } } 
-        else { if (tt < bestTimeNormal) { bestTimeNormal = tt; localStorage.setItem('bestTimeHunterNormal', tt); } }
-        
-        updateBestUI(); setTimeout(() => { document.getElementById('screen-win').classList.remove('hidden'); }, 2000);
+        let baseTime = isHardcore ? 30 : 60;
+        let limit = baseTime + (currentLevel - 1) * 30;
+        let timeTaken = parseFloat((limit - timeLeft).toFixed(1));
+        totalCampaignTime += timeTaken;
+
+        if (currentLevel < MAX_LEVEL) {
+            gameState = 'level_complete';
+            document.getElementById('level-p-extra').innerText = winTexts[Math.floor(Math.random()*winTexts.length)];
+            document.getElementById('level-total-time').innerText = totalCampaignTime.toFixed(1);
+            setTimeout(() => { document.getElementById('screen-level-up').classList.remove('hidden'); }, 1500);
+        } else {
+            gameState = 'win'; 
+            finalTimeGlobal = totalCampaignTime.toFixed(1);
+            document.getElementById('win-time').innerText = finalTimeGlobal; 
+            document.getElementById('win-mode').innerText = isHardcore ? " [HARDCORE]" : "";
+            try { document.getElementById('player-name').value = localStorage.getItem('hunter_player_name') || ''; } catch(e){}
+            
+            if (isHardcore) { if (totalCampaignTime < bestTimeHardcore) { bestTimeHardcore = totalCampaignTime.toFixed(1); localStorage.setItem('bestTimeHunterHardcoreC', bestTimeHardcore); } } 
+            else { if (totalCampaignTime < bestTimeNormal) { bestTimeNormal = totalCampaignTime.toFixed(1); localStorage.setItem('bestTimeHunterNormalC', bestTimeNormal); } }
+            
+            updateBestUI(); setTimeout(() => { document.getElementById('screen-win').classList.remove('hidden'); }, 2000);
+        }
     }
 }
 
+function nextLevel() { currentLevel++; hideAllScreens(); generateWorld(); startCountdown(); }
+
 function saveToLocalLeaderboard() { 
     let n = document.getElementById('player-name').value.trim() || "Pajcrman"; let dn = isHardcore ? n + " [HC]" : n; 
-    let s = JSON.parse(localStorage.getItem('hunter_local_scores_v2') || "[]"); 
-    s.push({ name: dn, time: parseFloat(finalTimeGlobal), hc: isHardcore }); 
-    s.sort((a, b) => a.time - b.time); s = s.slice(0, 10); 
-    localStorage.setItem('hunter_local_scores_v2', JSON.stringify(s)); localStorage.setItem('hunter_player_name', n);
-    alert("Zapsáno v Síni slávy!"); showLeaderboard('screen-win'); 
+    let s = JSON.parse(localStorage.getItem('hunter_local_scores_camp') || "[]"); s.push({ name: dn, time: parseFloat(finalTimeGlobal), hc: isHardcore }); 
+    s.sort((a, b) => a.time - b.time); s = s.slice(0, 10); localStorage.setItem('hunter_local_scores_camp', JSON.stringify(s)); 
+    localStorage.setItem('hunter_player_name', n); alert("Kampaň uložena!"); showLeaderboard('screen-win'); 
 }
 
 function copyResultToClipboard() { 
-    let n = document.getElementById('player-name').value.trim() || "Pajcrman", m = isHardcore ? " v HARDCORE módu" : ""; 
-    navigator.clipboard.writeText(`🏆 PAJCRMAN ROKU: ${n} nahnal konstrukci k práci za ${finalTimeGlobal}s${m}! Hunter s.r.o. žije.`).then(() => alert("Zkopírováno pro firemní chat!")); 
+    let n = document.getElementById('player-name').value.trim() || "Pajcrman", m = isHardcore?" v HC módu":""; 
+    navigator.clipboard.writeText(`🏆 PAJCRMAN ROKU: ${n} přežil celou kampaň (10 pater) a nahnal konstrukci k práci za ${finalTimeGlobal}s${m}! Hunter s.r.o. žije.`).then(() => alert("Zkopírováno!")); 
 }
 
 function showLeaderboard(f) { 
-    returnScreen = f; 
-    document.getElementById('screen-start').classList.add('hidden'); document.getElementById('screen-win').classList.add('hidden'); document.getElementById('screen-lose').classList.add('hidden'); 
-    document.getElementById('screen-leaderboard').classList.remove('hidden'); 
-    let s = JSON.parse(localStorage.getItem('hunter_local_scores_v2') || "[]"); 
-    document.getElementById('leaderboard-content').innerHTML = s.length === 0 ? "Zatím žádné záznamy." : s.map((x, i) => `<div class="leaderboard-row"><span style="color:${x.hc?"#e74c3c":"white"}">${i+1}. ${x.name}</span><span style="color:${x.hc?"#e74c3c":"white"}">${x.time}s</span></div>`).join(''); 
+    returnScreen = f; hideAllScreens(); document.getElementById('screen-leaderboard').classList.remove('hidden'); 
+    let s = JSON.parse(localStorage.getItem('hunter_local_scores_camp') || "[]"); 
+    document.getElementById('leaderboard-content').innerHTML = s.length === 0 ? "Zatím žádné záznamy z kampaně." : s.map((x, i) => `<div class="leaderboard-row"><span style="color:${x.hc?"#e74c3c":"white"}">${i+1}. ${x.name}</span><span style="color:${x.hc?"#e74c3c":"white"}">${x.time}s</span></div>`).join(''); 
 }
 
-function closeLeaderboard() { 
-    document.getElementById('screen-leaderboard').classList.add('hidden'); 
-    document.getElementById(returnScreen).classList.remove('hidden'); 
-}
+function closeLeaderboard() { hideAllScreens(); document.getElementById(returnScreen).classList.remove('hidden'); }
+function resetGameToMenu() { currentLevel = 1; totalCampaignTime = 0.0; hideAllScreens(); document.getElementById('screen-start').classList.remove('hidden'); gameState = 'menu'; generateWorld(); }
+function resetGame() { resetGameToMenu(); }
 
-function resetGame() { location.reload(); }
-
-// --- UPDATE & DRAW ---
 function update() {
     if(gameState !== 'playing') return;
-    
-    let dx = 0, dy = 0; 
-    if (keys['w'] || keys['arrowup']) dy -= player.speed; 
-    if (keys['s'] || keys['arrowdown']) dy += player.speed; 
-    if (keys['a'] || keys['arrowleft']) dx -= player.speed; 
-    if (keys['d'] || keys['arrowright']) dx += player.speed;
-    
+    let dx = 0, dy = 0; if (keys['w'] || keys['arrowup']) dy -= player.speed; if (keys['s'] || keys['arrowdown']) dy += player.speed; if (keys['a'] || keys['arrowleft']) dx -= player.speed; if (keys['d'] || keys['arrowright']) dx += player.speed;
     if (joystickActive) { dx += joyX * player.speed; dy += joyY * player.speed; }
-    
-    if (!checkWallCollision(player.x + dx, player.y, player.size)) player.x += dx; 
-    if (!checkWallCollision(player.x, player.y + dy, player.size)) player.y += dy;
-    
-    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2)); 
-    camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
-    
-    coffees.forEach(c => { 
-        if(!c.collected && Math.hypot(player.x-c.x, player.y-c.y) < 35) { 
-            c.collected = true; player.isBoosted = true; 
-            let bm = isHardcore ? 1.2 : 1.4; player.speed = player.baseSpeed * bm; 
-            document.getElementById('boost-indicator').innerText = "⚡ KOFEIN!"; 
-            setTimeout(() => { player.isBoosted = false; player.speed = player.baseSpeed; document.getElementById('boost-indicator').innerText = ""; }, 8000); 
-        } 
-    });
-    
+    if (!walls.some(w => player.x+dx+15 > w.x && player.x+dx-15 < w.x+w.w && player.y+15 > w.y && player.y-15 < w.y+w.h)) player.x += dx;
+    if (!walls.some(w => player.x+15 > w.x && player.x-15 < w.x+w.w && player.y+dy+15 > w.y && player.y+dy-15 < w.y+w.h)) player.y += dy;
+    camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2)); camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
+    coffees.forEach(c => { if(!c.collected && Math.hypot(player.x-c.x, player.y-c.y) < 35) { c.collected = true; player.isBoosted = true; let bm = isHardcore?1.2:1.4; player.speed = player.baseSpeed*bm; boostEl.innerText="⚡ KOFEIN!"; setTimeout(()=>{player.isBoosted=false; player.speed=player.baseSpeed; boostEl.innerText="";}, 8000); } });
     slackers.forEach(s => s.update());
 }
 
 function draw() {
-    ctx.clearRect(0, 0, VIEW_W, VIEW_H); 
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    
-    ctx.fillStyle = "#34495e"; 
-    walls.forEach(w => ctx.fillRect(w.x-camera.x, w.y-camera.y, w.w, w.h));
-    
-    desks.forEach(d => { 
-        ctx.fillStyle = "#555"; ctx.fillRect(d.x-camera.x-30, d.y-camera.y-20, 60, 40); 
-        ctx.fillStyle = "white"; ctx.font = "30px Arial"; ctx.fillText("🖥️", d.x-camera.x, d.y-camera.y); 
-    });
-    
-    coffees.forEach(c => c.draw(camera.x, camera.y)); 
-    slackers.forEach(s => s.draw(camera.x, camera.y));
-    
+    ctx.clearRect(0, 0, VIEW_W, VIEW_H); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#34495e"; walls.forEach(w => ctx.fillRect(w.x-camera.x, w.y-camera.y, w.w, w.h));
+    desks.forEach(d => { ctx.fillStyle = "#555"; ctx.fillRect(d.x-camera.x-30, d.y-camera.y-20, 60, 40); ctx.fillStyle = "white"; ctx.font = "30px Arial"; ctx.fillText("🖥️", d.x-camera.x, d.y-camera.y); });
+    coffees.forEach(c => c.draw(camera.x, camera.y)); slackers.forEach(s => s.draw(camera.x, camera.y));
     let px = player.x-camera.x, py = player.y-camera.y;
-    if (gameState === 'win') { 
-        danceFrame++; let b = Math.abs(Math.sin(danceFrame*0.15))*15; 
-        ctx.font = "40px Arial"; ctx.fillText("🏆", px+20, py-20-b); ctx.fillText("🤓", px, py-b); 
-    } else if (gameState === 'lose') { 
-        ctx.font = "45px Arial"; ctx.fillText("💀", px, py); 
-    } else { 
-        if (player.isBoosted) { ctx.shadowBlur = 20; ctx.shadowColor = "#f39c12"; } 
-        ctx.font = "40px Arial"; ctx.fillText("🤓", px, py); ctx.shadowBlur = 0; 
-        ctx.strokeStyle = "#95a5a6"; ctx.lineWidth = 6; ctx.lineCap = "round"; 
-        ctx.beginPath(); ctx.moveTo(px+10, py-5); ctx.lineTo(px+30, py-25); ctx.lineTo(px+37, py-18); ctx.stroke(); 
-    }
-    
+    if (gameState==='win' || gameState==='level_complete') { danceFrame++; let b = Math.abs(Math.sin(danceFrame*0.15))*15; ctx.font="40px Arial"; ctx.fillText("🏆", px+20, py-20-b); ctx.fillText("🤓", px, py-b); } 
+    else if (gameState==='lose') { ctx.font="45px Arial"; ctx.fillText("💀", px, py); } 
+    else { if(player.isBoosted) { ctx.shadowBlur=20; ctx.shadowColor="#f39c12"; } ctx.font="40px Arial"; ctx.fillText("🤓", px, py); ctx.shadowBlur=0; ctx.strokeStyle="#95a5a6"; ctx.lineWidth=6; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(px+10, py-5); ctx.lineTo(px+30, py-25); ctx.lineTo(px+37, py-18); ctx.stroke(); }
     update(); requestAnimationFrame(draw);
 }
-
-// INICIALIZACE
-updateBestUI(); generateWorld(); requestAnimationFrame(draw);
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true); window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+updateBestUI(); generateWorld(); draw();
 </script>
 </body>
 </html>
