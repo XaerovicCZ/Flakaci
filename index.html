@@ -13,11 +13,8 @@
         .level-badge { background: #e74c3c; padding: 2px 8px; border-radius: 5px; color: white; margin-right: 10px;}
         canvas { display: block; width: 100%; height: auto; background: #2c3e50; border: 4px solid #555; border-radius: 0 0 10px 10px; box-shadow: 0 10px 50px rgba(0,0,0,0.8); box-sizing: border-box; }
         .no-cursor { cursor: none; }
-        
-        /* OVERLAY - upraveno pro scrollování a flex-start na malých obrazovkách */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 100; border-radius: 0 0 10px 10px; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 100; border-radius: 0 0 10px 10px; padding: 15px; box-sizing: border-box; }
         .hidden { display: none !important; }
-        
         h1 { font-size: 45px; margin-bottom: 5px; color: #e74c3c; text-shadow: 2px 2px 0 #000; text-transform: uppercase; }
         h2 { font-size: 24px; margin-bottom: 10px; color: #f1c40f; }
         .intro-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 15px; max-width: 85%; border-left: 4px solid #f1c40f; }
@@ -47,21 +44,18 @@
         .leaderboard-row { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0; font-family: monospace; font-size: 16px; }
         .input-name { padding: 10px; font-size: 18px; width: 80%; max-width: 250px; margin-bottom: 10px; background: #333; color: white; border: 1px solid #555; text-align: center; border-radius: 5px; }
 
-        /* MOBILNÍ RESPONZIVITA - OPRAVA PŘEKRÝVÁNÍ */
         @media (max-width: 650px), (max-height: 750px) {
             .ui-bar { font-size: 13px; justify-content: center; gap: 8px; padding: 8px; flex-wrap: wrap; }
             .level-badge { margin-right: 5px; padding: 2px 5px; font-size: 12px; }
             h1 { font-size: 32px; margin-bottom: 5px; }
-            h2 { font-size: 18px; }
+            h2 { font-size: 18px; margin-bottom: 5px;}
             .intro-text { font-size: 15px; min-height: auto; margin-bottom: 8px; }
             .intro-box { padding: 10px; margin-bottom: 10px; width: 95%; }
             .intro-box p { font-size: 11px !important; }
             .btn { padding: 8px 15px; font-size: 14px; margin: 3px; }
             .lvl-btn { width: 38px; height: 38px; font-size: 16px; margin: 2px; }
             .level-grid { max-width: 250px; margin: 5px 0; gap: 4px; }
-            
-            /* Důležité: Na mobilu zarovná menu shora a přidá min. výšku, aby se dalo scrollovat a nepřeteklo nahoru */
-            .overlay { justify-content: flex-start; padding-top: 15px; min-height: 520px; }
+            .overlay { justify-content: flex-start; padding-top: 15px; min-height: 520px; overflow-y: auto; }
         }
     </style>
 </head>
@@ -95,7 +89,8 @@
 
             <div class="intro-box" style="margin-bottom:10px; padding:8px;">
                 <p style="margin:0; font-size:12px; color: #ccc;">
-                    📈 <b>Postup:</b> Víc lidí, víc času, těžší kancl! | ☕ <b>Kafaři:</b> Utíkají extra rychle!
+                    📈 <b>Postup:</b> Víc lidí, víc času, těžší kancl! | ☕ <b>Kafaři:</b> Utíkají extra rychle!<br>
+                    😴 <b>Zamrzlíci:</b> Šance, že někdo spí vestoje a neuteče.
                 </p>
                 <p id="hc-info" style="margin:3px 0 0 0; font-size:13px; color: #e74c3c; font-weight: bold; display:none;">
                     ⚠️ HARDCORE: Poloviční čas a slabší káva!
@@ -114,9 +109,16 @@
         <div id="screen-level-up" class="overlay hidden">
             <h1 style="color:#f1c40f;">PATRO VYČIŠTĚNO</h1>
             <h2 id="level-p-extra">Všichni už tu makají.</h2>
-            <p>Tvůj celkový čas kampaně: <span id="level-total-time" style="color:#e74c3c; font-weight:bold; font-size:20px;">0</span>s</p>
+            <p>Zdolal jsi patro: <span id="level-cleared-display" style="font-weight:bold; color:white;"></span></p>
+            <p>Průběžný čas kampaně: <span id="level-total-time" style="color:#e74c3c; font-weight:bold; font-size:20px;">0</span>s</p>
             
             <div style="margin: 10px 0;">
+                <input type="text" id="player-name-up" class="input-name" placeholder="Tvé jméno" maxlength="15"><br>
+                <button class="btn btn-green" onclick="saveToLocalLeaderboard('player-name-up')">Uložit do žebříčku</button>
+                <button class="btn btn-orange" onclick="copyResultToClipboard('player-name-up')">Kopírovat</button>
+            </div>
+
+            <div>
                 <button class="btn btn-diff btn-diff-normal active" onclick="setDifficulty(false)">Normální</button>
                 <button class="btn btn-diff btn-diff-hardcore" onclick="setDifficulty(true)">Hardcore 💀</button>
             </div>
@@ -134,9 +136,9 @@
             <p>Celkový čas kampaně: <span id="win-time" style="font-size:24px; font-weight:bold; color:#ffd700;">0</span>s <span id="win-mode" style="color:#e74c3c;"></span></p>
             
             <div style="margin: 10px 0;">
-                <input type="text" id="player-name" class="input-name" placeholder="Tvé jméno" maxlength="15"><br>
-                <button class="btn btn-green" onclick="saveToLocalLeaderboard()">Uložit rekord</button>
-                <button class="btn btn-orange" onclick="copyResultToClipboard()">Kopírovat do chatu</button>
+                <input type="text" id="player-name-win" class="input-name" placeholder="Tvé jméno" maxlength="15"><br>
+                <button class="btn btn-green" onclick="saveToLocalLeaderboard('player-name-win')">Uložit rekord</button>
+                <button class="btn btn-orange" onclick="copyResultToClipboard('player-name-win')">Kopírovat do chatu</button>
             </div>
             
             <div style="margin: 10px 0;">
@@ -146,21 +148,27 @@
 
             <div>
                 <button class="btn" onclick="resetGameToMenu()">Zpět do menu</button>
+                <button class="btn btn-purple" onclick="showLeaderboard('screen-win')">🏆 Síň slávy</button>
             </div>
         </div>
 
         <div id="screen-lose" class="overlay hidden">
             <h1>DOHRA V HUNTERU</h1>
             <p id="lose-p-extra" style="font-style: italic; font-weight: bold; color: #e74c3c; font-size: 22px; max-width: 80%; line-height: 1.5;"></p>
-            <p>Přežil jsi do patra: <span id="lose-level" style="font-weight:bold; color:#f1c40f; font-size:20px;">1</span>/10</p>
+            <p>Konec v patře: <span id="lose-level" style="font-weight:bold; color:#f1c40f; font-size:20px;">1</span>/10</p>
             
+            <div style="margin: 10px 0;">
+                <input type="text" id="player-name-lose" class="input-name" placeholder="Tvé jméno" maxlength="15"><br>
+                <button class="btn btn-green" onclick="saveToLocalLeaderboard('player-name-lose')">Uložit výsledek</button>
+            </div>
+
             <div style="margin: 10px 0;">
                 <button class="btn btn-diff btn-diff-normal active" onclick="setDifficulty(false)">Normální</button>
                 <button class="btn btn-diff btn-diff-hardcore" onclick="setDifficulty(true)">Hardcore 💀</button>
             </div>
 
             <div>
-                <button class="btn" onclick="retryLevel()">Zkusit patro znovu</button>
+                <button class="btn btn-orange" onclick="retryLevel()">Zkusit patro znovu</button>
                 <button class="btn btn-danger" onclick="resetGameToMenu()">Konec směny (Menu)</button>
             </div>
         </div>
@@ -186,12 +194,14 @@ const screenWin = document.getElementById('screen-win'), screenLose = document.g
 const VIEW_W = 1000, VIEW_H = 650, WORLD_W = 2400, WORLD_H = 1800;
 let slackers = [], desks = [], walls = [], coffees = [];
 let player = { x: 1200, y: 900, size: 20, speed: 4.8, baseSpeed: 4.8, isBoosted: false }; 
-let camera = { x: 0, y: 0 }, keys = {}, timeLeft, timerInterval, danceFrame = 0, gameState = 'menu', finalTimeGlobal = "0.0", returnScreen = 'screen-start'; 
+let camera = { x: 0, y: 0 }, keys = {}, timeLeft, timerInterval, danceFrame = 0, gameState = 'menu', returnScreen = 'screen-start'; 
 
 // --- KAMPAŇ A ODEMYKÁNÍ ---
 let currentLevel = 1;
+let startLevel = 1; 
 const MAX_LEVEL = 10;
 let totalCampaignTime = 0.0;
+let timeAtLevelStart = 0.0; 
 
 let unlockedNormal = parseInt(localStorage.getItem('hunter_unlocked_norm')) || 1;
 let unlockedHardcore = parseInt(localStorage.getItem('hunter_unlocked_hc')) || 1;
@@ -207,32 +217,59 @@ const intros = [
 
 const winTexts = [
     "Všichni jsou vzorně u monitorů a výseky se hýbou vpřed.", "Dneska nebudou přesčasy, konstrukce zázračně zrychlila.",
-    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.", "Dílna děkuje! Konstrukce konečně pochopila, co je práce."
+    "Takhle by to mělo vypadat! Hunter s.r.o. jede naplno.", "Dílna děkuje! Konstrukce konečně pochopila, co je práce.",
+    "Hunter s.r.o. hlásí rekordní tržby díky tvé buzeraci.", "Na dílně se oslavuje, výkresy konečně dorazily včas.",
+    "Ředitel tě navrhl na zaměstnance roku (a prémie možná budou).", "Konstruktéři mají noční můry o Pajcrmanovi, ale makají.",
+    "Splněno na 120 %! Dneska můžeš jít domů o pět minut dřív.", "Klávesnice hoří, myši se vaří, tohle je výkon!",
+    "Dokonalá kontrola. Všichni sedí rovně a neodmlouvají.", "Žádné prostoje. Tohle oddělení jsi vycvičil k dokonalosti.",
+    "Pišta na dílně brečí štěstím, že má co dělat.", "Pajcrman zachránil firmu. Zase."
 ];
 
 const loseTexts = [
     "Konstrukce nestihla dnešní výrobu, bude přesčas.", "Vedení je nasrané, nebudou prémie.",
     "Konstruktéři posrali desky.", "Na dílně začala revoluce proti konstruktérům.",
     "Když nemaká Pišta, tak už ani konstrukce.", "Pajcrman jde na kobereček, konstrukce ho totálně vyškolila.",
-    "Zase se kreslí nesmysly, které nejdou vyrobit. Směna končí v slzách.", "Výroba odeslala Pajcrmana domů, konstrukce vyhrála dnešní bitvu flákání."
+    "Zase se kreslí nesmysly, které nejdou vyrobit. Směna končí v slzách.", "Výroba odeslala Pajcrmana domů, konstrukce vyhrála dnešní bitvu flákání.",
+    "Odbory tě zažalovaly za bossing. Firma to zabalila.", "Polovina oddělení podala výpověď, zbytek hraje karty.",
+    "Ředitel ti sebral pajcr a poslal tě na úřad práce.", "Termíny hoří, klienti ruší objednávky. Katastrofa.",
+    "Na dílně došel materiál a mistr dostal infarkt.", "Pajcrman ztratil autoritu. Konstruktéři ti nakreslili tykadla.",
+    "Firma je v insolvenci a za všechno může tvoje pomalost.", "Už i kávovar podal výpověď. Je konec.",
+    "Všichni šli na oběd a už se nevrátili.", "Hunter s.r.o. se přejmenoval na Flákači s.r.o."
 ];
 
 const idleMsgs = [
     "Spadl mi CAD!", "Tohle nejde vyrobit.", "Chrrr...", "Zase pondělí.", "Čekám na kafe...",
     "Hledám šroubek v 3D.", "Ten výsek nedává smysl.", "Pišta říkal, že to počká.", 
     "Aktualizace Windows...", "Myš mi nefunguje.", "Renderuju stínování.", "Kreslím to od oka.",
-    "Zrovna se to načítá.", "Kde je to razítko?", "Někdo mi smazal sestavu!"
+    "Zrovna se to načítá.", "Kde je to razítko?", "Někdo mi smazal sestavu!",
+    "Simuluju zatížení...", "Vybírám barvu dílu.", "Ten monitor mě hypnotizuje.", "Tlačím to očima.",
+    "Piju už pátý kafe.", "Kde je ten výkres?", "Zrovna mi volala manželka.", "Myšlenkově jsem už doma.",
+    "Kdo mi smazal poznámky?", "Šéf tu není, tak co.", "Čekám, až to vychladne.", "Hledám inspiraci na netu.",
+    "Ono se to samo nenakreslí... nebo jo?", "Dívám se do blba.", "Snažím se najít motivaci.", 
+    "Tlačítko myši je moc těžké.", "Mám křeč v ukazováčku.", "Potřebuju pauzu na cigáro.", 
+    "Nefunguje mi klávesnice.", "Sleduju, jak padá prach.", "Tenhle stůl je nějak nakřivo.", 
+    "Přemýšlím o smyslu života.", "Louskám oříšky.", "Asi jsem smazal server.", "Zálohuju... už hodinu.", 
+    "Někdo mi sebral propisku.", "Dělám, že dělám.", "Hledám ten správný font.", 
+    "Vymýšlím omluvu na zítra.", "Konzultuju s kolegou (o fotbale)."
 ];
 
 const caughtMsgs = [
     "Au! To nahlásím odborům!", "Zrovna jsem chtěl dát Save!", "Ale já udělal hodně!", 
     "Ono to fakt nejde pracovat!", "Mám blbý den dnes...", "Jdi s tím pajcrem do prdele!", 
     "Takhle motivace nefunguje!", "Už klikám, už klikám!", "To je šikana!",
-    "Už běžím k myši!", "Nech mě, já přemýšlím!", "Počkej, zrovna se načetl model!"
+    "Už běžím k myši!", "Nech mě, já přemýšlím!", "Počkej, zrovna se načetl model!",
+    "Neee, můj rekord v minách!", "Vždyť jsem měl zrovna pauzu!", "Už zapínám CAD!", 
+    "Ty vole, ty ses tu zjevil!", "To není, jak to vypadá!", "Zrovna jsem chtěl začít!", 
+    "Jdu na to, šéfe!", "Až dopiju kafe!", "Nekřič na mě!", "Mám citlivou duši!", 
+    "To byl jen mikrospránek!", "Pajcr? Fakt?", "Dej to pryč!", "Už klikám jako divej!", 
+    "Nech mě žít!", "Práce šlechtí, ale...", "Jdu tvořit hodnoty!", "Tvoje metody jsou středověké!", 
+    "Volám HR!", "Jsem ve stresu!", "To je na žalobu!", "Ruce vzhůru, jdu k PC!", 
+    "Zase ta buzerace!", "Dneska už jsem jednu čáru udělal!", "Nejsem robot!", 
+    "Mám právo na odpočinek!", "Tohle je toxický pracoviště!", "Zabils mi kreativitu!", 
+    "Už píšu výpověď!", "Dobře, dobře, makám!"
 ];
 
-// --- OBTÍŽNOST ---
-let isHardcore = false, bestTimeNormal = Infinity, bestTimeHardcore = Infinity;
+// --- OBTÍŽNOST A LEVEL SELECT ---
 try {
     let sN = localStorage.getItem('bestTimeHunterNormalCamp'); if(sN) bestTimeNormal = parseFloat(sN);
     let sH = localStorage.getItem('bestTimeHunterHardcoreCamp'); if(sH) bestTimeHardcore = parseFloat(sH);
@@ -263,8 +300,11 @@ function updateLevelGrid() {
             btn.innerText = i;
             btn.onclick = () => { 
                 currentLevel = i; 
+                startLevel = i; 
                 totalCampaignTime = 0.0; 
+                timeAtLevelStart = 0.0;
                 updateLevelGrid(); 
+                generateWorld(); // Ihned přepne na správný počet
             };
         } else {
             btn.className = 'lvl-btn locked';
@@ -281,21 +321,13 @@ function setDifficulty(hardcore) {
     document.querySelectorAll('.btn-diff-hardcore').forEach(b => b.classList.toggle('active', hardcore));
     
     currentLevel = isHardcore ? unlockedHardcore : unlockedNormal;
+    startLevel = currentLevel;
     totalCampaignTime = 0.0;
+    timeAtLevelStart = 0.0;
     
     updateBestUI(); 
     updateLevelGrid();
-}
-
-function resetScores() { 
-    if (confirm("Opravdu vymazat rekordy i odemčená patra?")) { 
-        localStorage.removeItem('bestTimeHunterNormalCamp'); 
-        localStorage.removeItem('bestTimeHunterHardcoreCamp'); 
-        localStorage.removeItem('hunter_local_scores_camp'); 
-        localStorage.removeItem('hunter_unlocked_norm');
-        localStorage.removeItem('hunter_unlocked_hc');
-        location.reload(); 
-    } 
+    generateWorld(); // Ihned upraví pozadí na novou obtížnost/level
 }
 
 // --- OVLÁDÁNÍ ---
@@ -512,7 +544,7 @@ function generateWorld() {
     coffees = []; 
     
     document.getElementById('dynamic-intro').innerText = intros[Math.floor(Math.random() * intros.length)];
-    document.getElementById('level-display').innerText = `Patro: ${currentLevel}/10`;
+    document.getElementById('level-display').innerText = `${currentLevel}/10`;
 
     const centers = [
         {cx: 575, cy: 425}, {cx: 1825, cy: 425}, 
@@ -553,8 +585,18 @@ function generateWorld() {
     timeLeft = baseTime + (currentLevel - 1) * 30; 
     timerEl.innerText = timeLeft.toFixed(1);
     
+    // Zapsání času na začátku levelu pro případné opakování
+    timeAtLevelStart = totalCampaignTime;
+    
     camera.x = Math.max(0, Math.min(WORLD_W - VIEW_W, player.x - VIEW_W/2)); 
     camera.y = Math.max(0, Math.min(WORLD_H - VIEW_H, player.y - VIEW_H/2));
+}
+
+function preFillNames() {
+    try { 
+        let savedName = localStorage.getItem('hunter_player_name') || ''; 
+        document.querySelectorAll('.input-name').forEach(el => el.value = savedName);
+    } catch(e){}
 }
 
 // --- FUNKCE PRO ZMĚNU OBRAZOVEK ---
@@ -610,6 +652,9 @@ function triggerLose() {
     canvas.classList.remove('no-cursor'); 
     document.getElementById('lose-p-extra').innerText = loseTexts[Math.floor(Math.random() * loseTexts.length)]; 
     document.getElementById('lose-level').innerText = currentLevel;
+    
+    preFillNames();
+    
     setTimeout(function() { 
         hideAllScreens();
         document.getElementById('screen-lose').classList.remove('hidden'); 
@@ -645,6 +690,9 @@ function checkWin() {
             gameState = 'level_complete';
             document.getElementById('level-p-extra').innerText = winTexts[Math.floor(Math.random() * winTexts.length)];
             document.getElementById('level-total-time').innerText = totalCampaignTime.toFixed(1);
+            document.getElementById('level-cleared-display').innerText = currentLevel;
+            
+            preFillNames();
             
             setTimeout(function() { 
                 hideAllScreens();
@@ -653,14 +701,9 @@ function checkWin() {
             }, 1500);
         } else {
             gameState = 'win'; 
-            finalTimeGlobal = totalCampaignTime.toFixed(1);
-            document.getElementById('win-time').innerText = finalTimeGlobal; 
+            document.getElementById('win-time').innerText = totalCampaignTime.toFixed(1); 
             document.getElementById('win-mode').innerText = isHardcore ? " [HARDCORE]" : "";
             document.getElementById('win-p-extra').innerText = winTexts[Math.floor(Math.random() * winTexts.length)];
-            
-            try { 
-                document.getElementById('player-name').value = localStorage.getItem('hunter_player_name') || ''; 
-            } catch(e){}
             
             if (isHardcore) { 
                 if (totalCampaignTime < bestTimeHardcore) { 
@@ -675,6 +718,8 @@ function checkWin() {
             }
             
             updateBestUI(); 
+            preFillNames();
+            
             setTimeout(function() { 
                 hideAllScreens();
                 document.getElementById('screen-win').classList.remove('hidden'); 
@@ -691,39 +736,85 @@ function nextLevel() {
 }
 
 function retryLevel() {
-    totalCampaignTime = 0.0; 
+    totalCampaignTime = timeAtLevelStart; // Vrátí čas před započetím tohoto levelu
     hideAllScreens();
     generateWorld();
     startCountdown();
 }
 
-function saveToLocalLeaderboard() { 
-    let n = document.getElementById('player-name').value.trim() || "Pajcrman"; 
+// Ukládání se správným férovým řazením a jménem z konkrétní kolonky
+function saveToLocalLeaderboard(inputId) { 
+    let inputEl = document.getElementById(inputId || 'player-name-win');
+    let n = inputEl ? inputEl.value.trim() : "Pajcrman";
+    if (!n) n = "Pajcrman";
+
     let dn = isHardcore ? n + " [HC]" : n; 
     let s = [];
     try {
-        let saved = localStorage.getItem('hunter_local_scores_camp');
+        let saved = localStorage.getItem('hunter_local_scores_camp_v4');
         if(saved) s = JSON.parse(saved);
     } catch(e){}
     
-    s.push({ name: dn, time: parseFloat(finalTimeGlobal), hc: isHardcore }); 
-    s.sort((a, b) => a.time - b.time); 
+    let levelToSave = currentLevel;
+    if (gameState === 'lose') levelToSave = currentLevel - 1;
+    
+    if (levelToSave < startLevel) {
+        alert("Zatím jsi nevyčistil žádné patro, není co ukládat!");
+        return;
+    }
+
+    s.push({ 
+        name: dn, 
+        level: levelToSave, 
+        startLevel: startLevel,
+        time: parseFloat(totalCampaignTime.toFixed(1)), 
+        hc: isHardcore 
+    }); 
+    
+    // Sort logic: Kdo dal víc pater v kuse > Došel na vyšší patro > Rychlejší čas
+    s.sort((a, b) => {
+        let aCleared = (a.level || 1) - (a.startLevel || 1) + 1;
+        let bCleared = (b.level || 1) - (b.startLevel || 1) + 1;
+        if (bCleared !== aCleared) return bCleared - aCleared; 
+        
+        let aMax = a.level || 1;
+        let bMax = b.level || 1;
+        if (bMax !== aMax) return bMax - aMax; 
+
+        return a.time - b.time;
+    }); 
+    
     s = s.slice(0, 10); 
     
     try {
-        localStorage.setItem('hunter_local_scores_camp', JSON.stringify(s)); 
+        localStorage.setItem('hunter_local_scores_camp_v4', JSON.stringify(s)); 
         localStorage.setItem('hunter_player_name', n); 
     } catch(e){}
     
-    alert("Kampaň uložena!"); 
-    showLeaderboard('screen-win'); 
+    alert("Zapsáno v Síni slávy!"); 
+    showLeaderboard(returnScreen); 
 }
 
-function copyResultToClipboard() { 
-    let n = document.getElementById('player-name').value.trim() || "Pajcrman";
+function copyResultToClipboard(inputId) { 
+    let inputEl = document.getElementById(inputId || 'player-name-win');
+    let n = inputEl ? inputEl.value.trim() : "Pajcrman";
+    if (!n) n = "Pajcrman";
+    
     let m = isHardcore ? " v HC módu" : ""; 
-    let text = `🏆 PAJCRMAN ROKU: ${n} přežil celou kampaň (10 pater) a nahnal konstrukci k práci za ${finalTimeGlobal}s${m}!`;
-    navigator.clipboard.writeText(text).then(() => alert("Zkopírováno!")); 
+    let levelToSave = currentLevel;
+    if (gameState === 'lose') levelToSave = currentLevel - 1;
+    
+    if (levelToSave < startLevel) {
+        alert("Zatím jsi nevyčistil žádné patro!");
+        return;
+    }
+
+    let lvlStr = (startLevel === 1 && levelToSave === 10) 
+        ? "přežil celou kampaň (10 pater)" 
+        : `vyčistil patra ${startLevel}-${levelToSave}`;
+
+    let text = `🏆 PAJCRMAN ROKU: ${n} ${lvlStr} a nahnal konstrukci k práci za ${totalCampaignTime.toFixed(1)}s${m}! Hunter s.r.o. žije.`;
+    navigator.clipboard.writeText(text).then(() => alert("Zkopírováno pro firemní chat!")); 
 }
 
 function showLeaderboard(f) { 
@@ -733,7 +824,7 @@ function showLeaderboard(f) {
     
     let s = [];
     try {
-        let saved = localStorage.getItem('hunter_local_scores_camp');
+        let saved = localStorage.getItem('hunter_local_scores_camp_v4');
         if(saved) s = JSON.parse(saved);
     } catch(e){}
     
@@ -744,7 +835,10 @@ function showLeaderboard(f) {
         for(let i=0; i<s.length; i++) {
             let x = s[i];
             let color = x.hc ? "#e74c3c" : "white";
-            html += `<div class="leaderboard-row"><span style="color:${color}">${i+1}. ${x.name}</span><span style="color:${color}">${x.time}s</span></div>`;
+            let start = x.startLevel || 1;
+            let end = x.level || 1;
+            let lvlText = (start === end) ? ` (P${end})` : ` (P${start}-${end})`;
+            html += `<div class="leaderboard-row"><span style="color:${color}">${i+1}. ${x.name}${lvlText}</span><span style="color:${color}">${x.time}s</span></div>`;
         }
     }
     document.getElementById('leaderboard-content').innerHTML = html; 
@@ -757,7 +851,9 @@ function closeLeaderboard() {
 
 function resetGameToMenu() { 
     currentLevel = isHardcore ? unlockedHardcore : unlockedNormal;
+    startLevel = currentLevel;
     totalCampaignTime = 0.0; 
+    timeAtLevelStart = 0.0;
     hideAllScreens(); 
     document.getElementById('screen-start').classList.remove('hidden'); 
     gameState = 'menu'; 
